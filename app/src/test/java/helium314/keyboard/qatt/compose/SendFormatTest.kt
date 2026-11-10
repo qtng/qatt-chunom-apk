@@ -36,6 +36,15 @@ class SendFormatTest {
     @Test fun chatApps() {
         assertTrue(ChatApps.isChatOrSocial("com.whatsapp"))
         assertTrue(ChatApps.isChatOrSocial("com.zing.zalo"))
+        // parts of the name: any package with facebook, instagram, messenger … in it, in any case
+        assertTrue(ChatApps.isChatOrSocial("com.facebook.katana"))
+        assertTrue(ChatApps.isChatOrSocial("com.facebook.orca"))
+        assertTrue(ChatApps.isChatOrSocial("com.instagram.barcelona"))
+        assertTrue(ChatApps.isChatOrSocial("com.example.MyMessenger"))
+        assertTrue(ChatApps.isChatOrSocial("com.twitter.android"))               // X
+        assertFalse(ChatApps.isChatOrSocial("com.x.app"))                        // not "x" alone
+        assertFalse(ChatApps.isChatOrSocial("com.example.xyz.box"))
+        assertFalse(ChatApps.isChatOrSocial("com.android.timeline.offline"))     // "line" is no part of a name
         assertFalse(ChatApps.isChatOrSocial("com.example.notes"))
         assertFalse(ChatApps.isChatOrSocial(null))
         assertFalse(ChatApps.isChatOrSocial(""))
