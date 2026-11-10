@@ -4,7 +4,7 @@ package helium314.keyboard.qatt.compose
 
 import android.content.ClipDescription
 import android.content.Intent
-import android.net.Uri
+import android.widget.Toast
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -36,6 +36,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private val field get() = fieldHolder.value
     private val choices by lazy { SendFormatChoices.deserialize(prefs.getString(PREF_CHOICES, "")) }
     private val usage by lazy { loadUsage() }
+    private val updater by lazy { FontUpdater(ime) { prefs } }
 
     private var panel: ComposePanelView? = null
     private var stripContainer: View? = null
@@ -197,9 +198,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font && FontStore.isInstalled(ime, font) }
         }
         menu.menu.setGroupCheckable(2, true, true)
-        menu.menu.add(Menu.NONE, 22, 22, ime.getString(R.string.compose_update_font, fonts.family.label, fontState(fonts.family)))
+        menu.menu.add(Menu.NONE, 22, 22, ime.getString(R.string.compose_update_font, fonts.family.label, fonts.family.sizeMb, fontState(fonts.family)))
+        menu.menu.add(Menu.NONE, 24, 24, R.string.compose_import_font)
         if (FontStore.imported(ime, ComposeFont.PEN) != null) menu.menu.add(Menu.NONE, 23, 23, R.string.compose_font_builtin)
-        menu.menu.add(Menu.NONE, 21, 21, R.string.compose_get_fonts)
         menu.menu.add(Menu.NONE, 20, 20, R.string.compose_forget_choices)
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -207,9 +208,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
                 2 -> saveSettings(s.copy(qatt = !s.qatt))
                 in 10..13 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
                 in 30..32 -> chooseFont(ComposeFont.values()[item.itemId - 30])
-                21 -> openFontPage()
-                22 -> launchImport(fonts.family)
-                23 -> { FontStore.remove(ime, ComposeFont.PEN); fonts.family = ComposeFont.PEN; prefs.edit { putString(PREF_FONT, ComposeFont.PEN.name) } }
+                22 -> updateFont(fonts.family)
+                24 -> launchImport(fonts.family)
+                23 -> { FontStore.remove(ime, ComposeFont.PEN); updater.forgetEtag(ComposeFont.PEN); fonts.family = ComposeFont.PEN; prefs.edit { putString(PREF_FONT, ComposeFont.PEN.name) } }
                 20 -> { choices.clear(); prefs.edit { putString(PREF_CHOICES, "") } }
             }
             refresh()
@@ -222,7 +223,29 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (FontStore.isInstalled(ime, font)) {
             fonts.family = font
             prefs.edit { putString(PREF_FONT, font.name) }
-        } else launchImport(font)   // not in the app yet: the user chooses the file (it is installed and chosen when it is imported)
+        } else updateFont(font)   // not in the app yet: it is downloaded and then chosen
+    }
+
+    /** Downloads the font (or finds that the one in the app is the newest), the progress is shown in the empty field. */
+    private fun updateFont(font: ComposeFont) {
+        val started = updater.update(font, { percent ->
+            panel?.setStatus(ime.getString(R.string.compose_font_downloading, font.label, if (percent >= 0) "$percent %" else "…"))
+        }) { result ->
+            panel?.setStatus(null)
+            val message = when (result) {
+                is FontDownloader.Result.Current -> ime.getString(R.string.compose_font_current, font.label)
+                is FontDownloader.Result.Downloaded -> {
+                    fonts.family = font
+                    prefs.edit { putString(PREF_FONT, font.name) }
+                    ime.getString(R.string.compose_font_installed)
+                }
+                is FontDownloader.Result.Failed -> ime.getString(R.string.compose_font_failed, result.reason)
+            }
+            Toast.makeText(ime, message, Toast.LENGTH_SHORT).show()
+            refresh()
+        }
+        if (!started) Toast.makeText(ime, R.string.compose_font_busy, Toast.LENGTH_SHORT).show()
+        else panel?.setStatus(ime.getString(R.string.compose_font_downloading, font.label, "…"))
     }
 
     /** The user chooses a font file for [font]: a new version of one that is in the app, or one that is not (the keyboard has no network of its own). */
@@ -234,11 +257,6 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private fun fontState(f: ComposeFont): String {
         val file = FontStore.imported(ime, f) ?: return ime.getString(if (f.bundled) R.string.compose_font_state_builtin else R.string.compose_font_state_none)
         return ime.getString(R.string.compose_font_state_imported, java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(file.lastModified())))
-    }
-
-    /** The page with the downloads of the fonts, in the browser (the keyboard has no network access of its own). */
-    private fun openFontPage() {
-        try { ime.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(FONT_PAGE)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { /* no browser */ }
     }
 
     // ---------- state shown ----------
@@ -259,9 +277,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         ImageStyle.OCEAN_GRADIENT -> R.string.compose_style_ocean_gradient
     })
 
-    /** "Font: Migoi", with "(import…)" while the big font is not in the app. */
+    /** "Font: Migoi", with "(download, 42 MB)" while the big font is not in the app. */
     private fun fontLabel(f: ComposeFont) = ime.getString(R.string.compose_font, f.label) +
-        if (FontStore.isInstalled(ime, f)) "" else " " + ime.getString(R.string.compose_font_import)
+        if (FontStore.isInstalled(ime, f)) "" else " " + ime.getString(R.string.compose_font_download, f.sizeMb)
 
     private fun refresh() {
         val p = panel ?: return
@@ -332,7 +350,6 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         private const val PREF_SPACE = "qatt_compose_space"
         private const val PREF_USAGE = "qatt_compose_usage"
         private const val PREF_FONT = "qatt_compose_font"
-        private const val FONT_PAGE = "https://chunom.org/chunom/fonts/"
         private const val MAX_USAGE = 1000
     }
 }

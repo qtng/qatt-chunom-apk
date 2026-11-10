@@ -27,14 +27,18 @@
     <string name="compose_more">More candidates</string>
     <string name="compose_less">Fewer candidates</string>
     <string name="compose_font">Font: %1$s</string>
-    <string name="compose_font_import">(import…)</string>
-    <string name="compose_get_fonts">Get fonts (browser)</string>
     <string name="compose_font_installed">Font installed</string>
     <string name="compose_font_invalid">This file is not a usable font</string>
     <string name="compose_style_ink_on_rice_paper">Image, black on rice paper</string>
-    <string name="compose_update_font">Update the font file… (%1$s, %2$s)</string>
     <string name="compose_font_builtin">Use the built-in QATT Pen</string>
     <string name="compose_font_state_builtin">built in</string>
     <string name="compose_font_state_none">not installed</string>
     <string name="compose_font_state_imported">imported %1$s</string>
+    <string name="compose_update_font">Update the font: %1$s (download, %2$d MB; %3$s)</string>
+    <string name="compose_font_download">(download, %1$d MB)</string>
+    <string name="compose_import_font">Import a font file…</string>
+    <string name="compose_font_downloading">%1$s: %2$s</string>
+    <string name="compose_font_current">%1$s is up to date</string>
+    <string name="compose_font_failed">Download failed: %1$s</string>
+    <string name="compose_font_busy">A download is already running</string>
 </resources>

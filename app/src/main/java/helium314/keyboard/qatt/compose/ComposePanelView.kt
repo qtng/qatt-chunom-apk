@@ -138,6 +138,9 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
     fun setFormatLabel(label: String) { format.text = "$label ▾" }
 
+    /** A status (the progress of a font download) in the empty field; null: the usual hint. */
+    fun setStatus(text: String?) { field.hint = text ?: context.getString(R.string.compose_hint) }
+
     /** The first candidates (at most five); a place without one is empty. */
     fun setCandidates(list: List<Candidate>) {
         cells.forEachIndexed { i, cell -> cell.set(list.getOrNull(i), fonts) }

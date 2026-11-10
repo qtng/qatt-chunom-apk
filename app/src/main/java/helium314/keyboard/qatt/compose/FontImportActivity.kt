@@ -33,7 +33,7 @@ class FontImportActivity : Activity() {
         val f = font
         if (requestCode == REQUEST && resultCode == RESULT_OK && uri != null && f != null) {
             if (FontStore.import(this, uri, f)) {
-                prefs().edit { putString("qatt_compose_font", f.name) }
+                prefs().edit { putString("qatt_compose_font", f.name); remove("qatt_compose_font_etag_" + f.name) }   // the version of an imported file is not known
                 Toast.makeText(this, R.string.compose_font_installed, Toast.LENGTH_SHORT).show()
             } else Toast.makeText(this, R.string.compose_font_invalid, Toast.LENGTH_LONG).show()
         }

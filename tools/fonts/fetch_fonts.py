@@ -18,16 +18,18 @@ BIG = ["qatt-pen.ttf"]                        # copied as they are
 PA = {"pa-pen.ttf": "pa-pen.woff2", "pa-migoi.ttf": "pa-migoi.woff2", "pa-phongthao.ttf": "pa-phongthao.woff2"}   # file written -> file on the CDN
 EXTRA = ["migoi.ttf", "phongthao.ttf"]         # 42 MB and 41 MB: not in the app, the user imports them
 
-def get(name):
-    return urllib.request.urlopen(urllib.request.Request(BASE + name, headers={"User-Agent": "font-fetch/1.0"})).read()
+def get(name, etag=False):
+    r = urllib.request.urlopen(urllib.request.Request(BASE + name, headers={"User-Agent": "font-fetch/1.0"}))
+    return (r.read(), r.headers.get("ETag")) if etag else r.read()
 
 here = os.path.dirname(os.path.abspath(__file__))
 out = os.path.join(here, "../../app/src/main/assets/fonts")
 os.makedirs(out, exist_ok=True)
 for name in BIG:
-    data = get(name)
+    data, etag = get(name, True)
     open(os.path.join(out, name), "wb").write(data)
-    print(name, len(data), "bytes")
+    if etag: open(os.path.join(out, name + ".etag"), "w").write(etag)   # the app asks the server "is this still the newest?" with it
+    print(name, len(data), "bytes, ETag", etag)
 for name, remote in PA.items():
     data = get(remote)
     font = TTFont(io.BytesIO(data))
