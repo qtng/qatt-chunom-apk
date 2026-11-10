@@ -1005,12 +1005,26 @@ public final class InputLogic {
      * @param settingsValues The current settings values.
      * @param inputTransaction The transaction in progress.
      */
-    /** The composing word after the Telex key of [event], or null if the key is typed as it is. */
-    private String applyTelex(final Event event) {
-        if (event.isFunctionalKeyEvent() || event.getMetaState() != 0 || !Character.isLetter(event.getCodePoint())) return null;
-        final String word = mWordComposer.getTypedWord();
-        if (word.isEmpty()) return null;
-        return TelexKey.INSTANCE.key(word, new String(Character.toChars(event.getCodePoint())));
+    /**
+     * Vietnamese Telex without composing text (no underlined word, no composing region of the system): the key is applied to the text
+     * before the cursor, as ime.js does to the value of an input field ([TelexKey]); only the part that changes is deleted and typed again.
+     * @return whether the key was handled (else it is typed as it is)
+     */
+    private boolean tryTelexKey(final Event event) {
+        if (event.isFunctionalKeyEvent() || event.getMetaState() != 0 || !Character.isLetter(event.getCodePoint())) return false;
+        if (mConnection.hasSelection() || mConnection.getExpectedSelectionStart() < 0) return false;
+        final CharSequence before = mConnection.getTextBeforeCursor(30, 0);
+        if (before == null || before.length() == 0) return false;
+        final String window = before.toString();
+        final String result = TelexKey.INSTANCE.key(window, new String(Character.toChars(event.getCodePoint())));
+        if (result == null) return false;
+        int common = 0;
+        final int max = Math.min(window.length(), result.length());
+        while (common < max && window.charAt(common) == result.charAt(common)) common++;
+        if (common > 0 && Character.isHighSurrogate(window.charAt(common - 1))) common--;
+        if (window.length() > common) mConnection.deleteTextBeforeCursor(window.length() - common);
+        if (result.length() > common) mConnection.commitText(result.substring(common), 1);
+        return true;
     }
 
     private void handleNonSeparatorEvent(final Event event, final SettingsValues settingsValues,
@@ -1025,7 +1039,7 @@ public final class InputLogic {
 
         // if we continue directly after a sometimesWordConnector, restart suggestions for the whole word
         // (only with URL detection and suggestions enabled)
-        if (settingsValues.mUrlDetectionEnabled && settingsValues.needsToLookupSuggestions()
+        if (!mTelex && settingsValues.mUrlDetectionEnabled && settingsValues.needsToLookupSuggestions()
                 && !isComposingWord && SpaceState.NONE == inputTransaction.getSpaceState()
                 && settingsValues.mSpacingAndPunctuations.isSometimesWordConnector(mConnection.getCodePointBeforeCursor())
                 // but not if there are two consecutive sometimesWordConnectors (e.g. "...bla")
@@ -1073,8 +1087,8 @@ public final class InputLogic {
         // We only start composing if this is a word code point. Essentially that means it's a
         // a letter or a word connector.
                 && settingsValues.isWordCodePoint(codePoint)
-        // We never go into composing state if suggestions are not requested.
-                && settingsValues.needsToLookupSuggestions() &&
+        // We never go into composing state if suggestions are not requested (and not for Telex: the text is changed directly).
+                && !mTelex && settingsValues.needsToLookupSuggestions() &&
         // In languages with spaces, we only start composing a word when we are not already
         // in the middle or at the end of a word. In languages without spaces, the above conditions are sufficient.
         // NOTE: If the InputConnection is slow, we skip the text-after-cursor check since it
@@ -1101,14 +1115,7 @@ public final class InputLogic {
         enterInlineEmojiSearchIfNeeded(codePoint, settingsValues);
 
         if (isComposingWord) {
-            final String telexWord = mTelex ? applyTelex(event) : null;
-            if (telexWord != null) {
-                // the key changed the word (a tone, â, ư, đ …): the composing word becomes the new text
-                final int[] codePoints = StringUtils.toCodePointArray(telexWord);
-                mWordComposer.replaceTypedWord(codePoints, getCoordinatesForCurrentKeyboard(codePoints));
-            } else {
-                mWordComposer.applyProcessedEvent(event);
-            }
+            mWordComposer.applyProcessedEvent(event);
             // If it's the first letter, make note of auto-caps state
             if (mWordComposer.isSingleLetter()) {
                 mWordComposer.setCapitalizedModeAtStartComposingTime(inputTransaction.getShiftState());
@@ -1117,7 +1124,9 @@ public final class InputLogic {
         } else {
             final boolean swapWeakSpace = tryStripSpaceAndReturnWhetherShouldSwapInstead(event, inputTransaction);
 
-            if (swapWeakSpace && trySwapSwapperAndSpace(event, inputTransaction)) {
+            if (mTelex && tryTelexKey(event)) {
+                // the key changed the text before the cursor (a tone, â, ư, đ …)
+            } else if (swapWeakSpace && trySwapSwapperAndSpace(event, inputTransaction)) {
                 mSpaceState = SpaceState.WEAK;
             } else if ((settingsValues.mInputAttributes.mInputType & InputType.TYPE_MASK_CLASS) != InputType.TYPE_CLASS_TEXT
                     && codePoint >= '0' && codePoint <= '9') {
@@ -1796,6 +1805,7 @@ public final class InputLogic {
         if (!settingsValues.mSpacingAndPunctuations.mCurrentLanguageHasSpacesOrWordIterator
                 // If no suggestions are requested, don't try restarting suggestions.
                 || !settingsValues.needsToLookupSuggestions()
+                || mTelex // Telex: no composing text, nothing is resumed
                 // If we are currently in a batch input, we must not resume suggestions, or the result
                 // of the batch input will replace the new composition. This may happen in the corner case
                 // that the app moves the cursor on its own accord during a batch input.
