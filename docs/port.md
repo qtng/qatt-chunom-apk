@@ -29,3 +29,13 @@ The data is `app/src/main/assets/nom/nom.txt` (about 230 KB, 37,000 glyph entrie
     node tools/golden/make_golden.mjs --chunom ../chunom --qatt ../qatt   # golden files (also the candidates: 10,000 words)
 
 `NomDictionaryTest` compares the first 12 candidates and the number of results for every reading of the dictionary, its prefixes of up to three letters and a few odd inputs with `VietIme.lookup` of the JavaScript.
+
+## The composition field (logic)
+
+`app/src/main/java/helium314/keyboard/qatt/compose/` (pure Kotlin except `AndroidSources.kt`), tests in `app/src/test/java/helium314/keyboard/qatt/compose/`:
+
+- `ComposeField`: the text of the field and the word being typed (Telex), the candidates (PA, QATT, then Chữ Nôm, 5 places), `pick`, Space with its setting (`SpaceMode`), Enter (a line break), Backspace (a key, then a whole cell), `clear`. The cursor is always at the end.
+- `SendFormatPolicy` (`SendFormat` TEXT / IMAGE): the start value and what is sent; `ChatApps`: package list, then the declared category; `GlyphSupport`: can the system show the characters.
+- `AndroidSources`: the answers on a device (`EditorInfo.packageName`, `ApplicationInfo.category`, `EditorInfoCompat.getContentMimeTypes`, `Paint.hasGlyph`); each one can fail and then says "no".
+
+Not done yet: the user interface (the button, the field, the bar, the selector and the arrow in HeliBoard's views), drawing the image and `commitContent`, storing the choice of Text/Image and the settings, moving the cursor in the field.
