@@ -49,7 +49,11 @@ What is special lives in a panel of our own (the composition field), so the base
 - **Text | Image** selector, left of ↑ (the format of sending):
   - Text: the field looks like a normal input, with a blinking cursor; ↑ commits the raw text (to read it, the system needs the fonts).
   - Image: the field looks like an image (a sticker), the cursor does not blink; ↑ renders the text **black on white** and inserts it with `commitContent`. If the app accepts no images (`EditorInfo.contentMimeTypes`), the raw text is committed instead.
-  - **Start value** (as long as the user has not chosen): Text if the system can show the characters with its fonts, else Image if the input field accepts images, else Text. It is decided again for every input field.
+  - **Start value** (as long as the user has not chosen), decided again for every input field:
+    1. **Image** if the app is a chat or social app (see below) and the field accepts images, even if this device could show the text (the recipient often cannot);
+    2. else **Text** if the system can show the characters with its fonts;
+    3. else **Image** if the field accepts images; else Text.
+  - **Which app is it?** `EditorInfo.packageName` (no permission needed). A list of package names of chat and social apps (in the code and extendable in ⚙; to check on a device: WhatsApp `com.whatsapp`, Telegram `org.telegram.messenger`, Signal `org.thoughtcrime.securesms`, Messenger `com.facebook.orca`, Facebook, Instagram, X, Discord, Google and Samsung Messages, Viber, LINE, Snapchat, Zalo `com.zing.zalo`). Perhaps in addition `ApplicationInfo.category == CATEGORY_SOCIAL` (API 26; whether the keyboard may read it of another app depends on package visibility, Android 11+; unchecked).
   - **A choice of the user** (a tap on Text or Image) is stored and holds, in every field, until the user changes it. (If the field accepts no images, Image still sends text, see above.)
   - **Can the system show the text?** Probe with `Paint.hasGlyph` (API 23; below it: no) on the default typeface, i.e. the fonts of the system with their fallbacks, for one character of each script: a QATT letter (U+F0000), a PA letter (U+F00B2) and a rare Chữ Nôm character (CJK Ext. B). Text is "showable" when all that appear in the field have glyphs. A QATT or PA font that the user has installed in the system counts. This tells what **this** device shows, not what the recipient's device shows; the choice of the user overrides it.
 - **←** discards the content of the field and returns to normal mode.
