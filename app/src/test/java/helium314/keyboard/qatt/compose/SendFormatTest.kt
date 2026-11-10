@@ -143,7 +143,19 @@ class SendFormatTest {
 
     @Test fun fonts() {
         assertEquals(listOf("QATT Pen", "Migoi", "Phong Thảo"), ComposeFont.values().map { it.label })
-        assertTrue(ComposeFont.values().all { it.letters.endsWith(".ttf") && it.pa.endsWith(".ttf") && it.nom.endsWith(".ttf") })
-        assertEquals(ComposeFont.values().size * 3, ComposeFont.values().flatMap { listOf(it.letters, it.pa, it.nom) }.toSet().size)   // no file twice
+        assertEquals(listOf(true, false, false), ComposeFont.values().map { it.bundled })     // only QATT Pen is in the app
+        assertTrue(ComposeFont.values().all { it.file.endsWith(".ttf") && it.pa.endsWith(".ttf") })
+        assertEquals(6, ComposeFont.values().flatMap { listOf(it.file, it.pa) }.toSet().size)  // no file twice
+        assertEquals("migoi.ttf", ComposeFont.MIGOI.downloadName)
+    }
+
+    @Test fun fontFiles() {
+        assertTrue(FontFile.looksLikeFont(byteArrayOf(0, 1, 0, 0, 5, 5)))                      // TrueType
+        assertTrue(FontFile.looksLikeFont("OTTO....".toByteArray()))                          // OpenType with outlines
+        assertTrue(FontFile.looksLikeFont("true....".toByteArray()))
+        assertFalse(FontFile.looksLikeFont("wOF2....".toByteArray()))                         // a web font is not taken
+        assertFalse(FontFile.looksLikeFont("<!DOC".toByteArray()))                            // a web page that was saved by mistake
+        assertFalse(FontFile.looksLikeFont(byteArrayOf(0, 1)))
+        assertTrue(FontFile.MIN_SIZE < 27_000_000L)                                           // QATT Pen is large enough
     }
 }

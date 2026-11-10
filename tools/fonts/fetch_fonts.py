@@ -1,27 +1,43 @@
 #!/usr/bin/env python3
-"""Fetches the fonts the composition field draws with from cdn.qatt.org (WOFF2) and writes them as TTF (Android cannot read WOFF2) to app/src/main/assets/fonts/.
+"""Fetches the fonts of the composition field from cdn.qatt.org into app/src/main/assets/fonts/.
 
     pip install fonttools brotli
-    python3 tools/fonts/fetch_fonts.py
+    python3 tools/fonts/fetch_fonts.py                 # what the app contains
+    python3 tools/fonts/fetch_fonts.py --extra DIR     # also the big fonts Migoi and Phong Thao into DIR (to copy to a phone and import in the app)
 
-QATT letters (U+F0000..), PA (U+F00B0..) and the most frequent Chữ Nôm characters (slice 00) of QATT Pen, Migoi and Phong Thảo (ComposeFont). Everything else is drawn with the fonts of the system.
+What the app contains:
+  - qatt-pen.ttf, the big font QATT Pen (27 MB, as it is): QATT, Chu Nom and the Latin of Quoc Ngu.
+  - pa-pen.ttf, pa-migoi.ttf, pa-phongthao.ttf, the PA fonts (WOFF2 on the CDN, converted to TTF, Android cannot read WOFF2). PA is not in the big fonts.
 The fonts are NOT under the licence of the app (GPL-3.0): see app/src/main/assets/fonts/LICENSE.txt.
 """
 import io, os, sys, urllib.request
 from fontTools.ttLib import TTFont
 
 BASE = "https://cdn.qatt.org/fonts/"
-FONTS = {                       # file written -> file on the CDN
-    "qatt-pen-letters.ttf": "qatt-pen-letters.woff2", "pa-pen.ttf": "pa-pen.woff2", "qatt-pen-00.ttf": "web/qatt-pen-00.woff2",
-    "migoi-letters.ttf": "migoi-letters.woff2", "pa-migoi.ttf": "pa-migoi.woff2", "migoi-00.ttf": "web/migoi-00.woff2",
-    "phongthao-letters.ttf": "phongthao-letters.woff2", "pa-phongthao.ttf": "pa-phongthao.woff2", "phongthao-00.ttf": "web/phongthao-00.woff2",
-}
-out = os.path.join(os.path.dirname(__file__), "../../app/src/main/assets/fonts")
+BIG = ["qatt-pen.ttf"]                        # copied as they are
+PA = {"pa-pen.ttf": "pa-pen.woff2", "pa-migoi.ttf": "pa-migoi.woff2", "pa-phongthao.ttf": "pa-phongthao.woff2"}   # file written -> file on the CDN
+EXTRA = ["migoi.ttf", "phongthao.ttf"]         # 42 MB and 41 MB: not in the app, the user imports them
+
+def get(name):
+    return urllib.request.urlopen(urllib.request.Request(BASE + name, headers={"User-Agent": "font-fetch/1.0"})).read()
+
+here = os.path.dirname(os.path.abspath(__file__))
+out = os.path.join(here, "../../app/src/main/assets/fonts")
 os.makedirs(out, exist_ok=True)
-for name, remote in FONTS.items():
-    data = urllib.request.urlopen(urllib.request.Request(BASE + remote, headers={"User-Agent": "font-fetch/1.0"})).read()
+for name in BIG:
+    data = get(name)
+    open(os.path.join(out, name), "wb").write(data)
+    print(name, len(data), "bytes")
+for name, remote in PA.items():
+    data = get(remote)
     font = TTFont(io.BytesIO(data))
     font.flavor = None
-    path = os.path.join(out, name)
-    font.save(path)
-    print(name, len(data), "->", os.path.getsize(path), "bytes,", len(font.getBestCmap()), "characters")
+    font.save(os.path.join(out, name))
+    print(name, len(data), "->", os.path.getsize(os.path.join(out, name)), "bytes,", len(font.getBestCmap()), "characters")
+if "--extra" in sys.argv:
+    target = sys.argv[sys.argv.index("--extra") + 1]
+    os.makedirs(target, exist_ok=True)
+    for name in EXTRA:
+        data = get(name)
+        open(os.path.join(target, name), "wb").write(data)
+        print(name, len(data), "bytes ->", target)

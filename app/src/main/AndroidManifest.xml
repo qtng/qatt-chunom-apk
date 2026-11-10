@@ -113,6 +113,12 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
                 android:resource="@xml/clipboard_provider_path"/>
         </provider>
 
+        <!-- lets the user choose a font file to import (a keyboard cannot open a file chooser itself) -->
+        <activity android:name="helium314.keyboard.qatt.compose.FontImportActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- the images of the composition field (Chữ Nôm, QATT, PA) that are sent with commitContent -->
         <provider android:name="androidx.core.content.FileProvider"
             android:authorities="@string/qatt_compose_provider_authority"

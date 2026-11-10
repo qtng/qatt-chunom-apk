@@ -24,9 +24,11 @@
     <string name="compose_style_pink_gradient">Image, pink gradient</string>
     <string name="compose_style_sunset_gradient">Image, sunset gradient</string>
     <string name="compose_style_ocean_gradient">Image, ocean gradient</string>
-    <string name="compose_font_pen" translatable="false">Font: QATT Pen</string>
-    <string name="compose_font_migoi" translatable="false">Font: Migoi</string>
-    <string name="compose_font_phongthao" translatable="false">Font: Phong Thảo</string>
     <string name="compose_more">More candidates</string>
     <string name="compose_less">Fewer candidates</string>
+    <string name="compose_font">Font: %1$s</string>
+    <string name="compose_font_import">(import…)</string>
+    <string name="compose_get_fonts">Get fonts (browser)</string>
+    <string name="compose_font_installed">Font installed</string>
+    <string name="compose_font_invalid">This file is not a usable font</string>
 </resources>

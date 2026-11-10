@@ -15,4 +15,4 @@ The APK is `app/build/outputs/apk/debug/`.
 
 ## Fonts
 
-`app/src/main/assets/fonts/` holds fonts of qatt.org (QATT Pen letters, PA Pen, a small part of QATT Pen) for the composition field and the images. They are **not** under the GPL-3.0 of the code but under the licence in `app/src/main/assets/fonts/LICENSE.txt` (copyright qatt.org). `python3 tools/fonts/fetch_fonts.py` fetches them from cdn.qatt.org and converts them to TTF.
+`app/src/main/assets/fonts/` holds fonts of qatt.org (QATT Pen, 27 MB, and the PA fonts) for the composition field and the images. They are **not** under the GPL-3.0 of the code but under the licence in `app/src/main/assets/fonts/LICENSE.txt` (copyright qatt.org). `python3 tools/fonts/fetch_fonts.py` fetches them from cdn.qatt.org (the PA fonts are converted to TTF). Migoi and Phong Thảo are imported by the user (⚙ of the composition field).

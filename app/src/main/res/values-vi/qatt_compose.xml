@@ -24,4 +24,9 @@
     <string name="compose_style_ocean_gradient">Ảnh, nền chuyển màu biển</string>
     <string name="compose_more">Thêm gợi ý</string>
     <string name="compose_less">Ít gợi ý hơn</string>
+    <string name="compose_font">Phông chữ: %1$s</string>
+    <string name="compose_font_import">(nhập…)</string>
+    <string name="compose_get_fonts">Tải phông chữ (trình duyệt)</string>
+    <string name="compose_font_installed">Đã cài phông chữ</string>
+    <string name="compose_font_invalid">Tệp này không phải là phông chữ dùng được</string>
 </resources>

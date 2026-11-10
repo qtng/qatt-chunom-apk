@@ -20,11 +20,16 @@ enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEn
     val isGradient get() = backgroundEnd != null
 }
 
-/** The fonts of the field and of the images (assets/fonts, tools/fonts/fetch_fonts.py): the QATT letters, PA and slice 00 of the Chữ Nôm of the font. */
-enum class ComposeFont(val label: String, val letters: String, val pa: String, val nom: String) {
-    PEN("QATT Pen", "qatt-pen-letters.ttf", "pa-pen.ttf", "qatt-pen-00.ttf"),
-    MIGOI("Migoi", "migoi-letters.ttf", "pa-migoi.ttf", "migoi-00.ttf"),
-    PHONGTHAO("Phong Thảo", "phongthao-letters.ttf", "pa-phongthao.ttf", "phongthao-00.ttf"),
+/**
+ * The fonts of the field and of the images: [file] is the big font (QATT, Chữ Nôm and the Latin of Quốc Ngữ in one file), [pa] the PA font (PA is not in the big fonts).
+ * Only QATT Pen is in the app ([bundled]); the others are imported by the user ([downloadName] is the file name on cdn.qatt.org and chunom.org).
+ */
+enum class ComposeFont(val label: String, val file: String, val pa: String, val bundled: Boolean) {
+    PEN("QATT Pen", "qatt-pen.ttf", "pa-pen.ttf", true),
+    MIGOI("Migoi", "migoi.ttf", "pa-migoi.ttf", false),
+    PHONGTHAO("Phong Thảo", "phongthao.ttf", "pa-phongthao.ttf", false);
+
+    val downloadName get() = file
 }
 
 /** What the selector shows: Text, or an Image in a style. */

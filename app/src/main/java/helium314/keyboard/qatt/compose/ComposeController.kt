@@ -3,6 +3,8 @@
 package helium314.keyboard.qatt.compose
 
 import android.content.ClipDescription
+import android.content.Intent
+import android.net.Uri
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -191,21 +193,39 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         )
         modes.forEachIndexed { i, (mode, label) -> menu.menu.add(1, 10 + i, 10 + i, label).apply { isCheckable = true; isChecked = s.space == mode } }
         menu.menu.setGroupCheckable(1, true, true)
-        ComposeFont.values().forEachIndexed { i, font -> menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font } }
+        ComposeFont.values().forEachIndexed { i, font ->
+            menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font && FontStore.isInstalled(ime, font) }
+        }
         menu.menu.setGroupCheckable(2, true, true)
+        menu.menu.add(Menu.NONE, 21, 21, R.string.compose_get_fonts)
         menu.menu.add(Menu.NONE, 20, 20, R.string.compose_forget_choices)
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> saveSettings(s.copy(pa = !s.pa))
                 2 -> saveSettings(s.copy(qatt = !s.qatt))
                 in 10..13 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
-                in 30..32 -> { fonts.family = ComposeFont.values()[item.itemId - 30]; prefs.edit { putString(PREF_FONT, fonts.family.name) } }
+                in 30..32 -> chooseFont(ComposeFont.values()[item.itemId - 30])
+                21 -> openFontPage()
                 20 -> { choices.clear(); prefs.edit { putString(PREF_CHOICES, "") } }
             }
             refresh()
             true
         }
         menu.show()
+    }
+
+    private fun chooseFont(font: ComposeFont) {
+        if (FontStore.isInstalled(ime, font)) {
+            fonts.family = font
+            prefs.edit { putString(PREF_FONT, font.name) }
+        } else {   // not in the app yet: the user chooses the file (it is installed and chosen when it is imported)
+            ime.startActivity(Intent(ime, FontImportActivity::class.java).putExtra(FontImportActivity.EXTRA_FONT, font.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }
+
+    /** The page with the downloads of the fonts, in the browser (the keyboard has no network access of its own). */
+    private fun openFontPage() {
+        try { ime.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(FONT_PAGE)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { /* no browser */ }
     }
 
     // ---------- state shown ----------
@@ -225,11 +245,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         ImageStyle.OCEAN_GRADIENT -> R.string.compose_style_ocean_gradient
     })
 
-    private fun fontLabel(f: ComposeFont) = ime.getString(when (f) {
-        ComposeFont.PEN -> R.string.compose_font_pen
-        ComposeFont.MIGOI -> R.string.compose_font_migoi
-        ComposeFont.PHONGTHAO -> R.string.compose_font_phongthao
-    })
+    /** "Font: Migoi", with "(import…)" while the big font is not in the app. */
+    private fun fontLabel(f: ComposeFont) = ime.getString(R.string.compose_font, f.label) +
+        if (FontStore.isInstalled(ime, f)) "" else " " + ime.getString(R.string.compose_font_import)
 
     private fun refresh() {
         val p = panel ?: return
@@ -300,6 +318,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         private const val PREF_SPACE = "qatt_compose_space"
         private const val PREF_USAGE = "qatt_compose_usage"
         private const val PREF_FONT = "qatt_compose_font"
+        private const val FONT_PAGE = "https://chunom.org/chunom/fonts/"
         private const val MAX_USAGE = 1000
     }
 }
