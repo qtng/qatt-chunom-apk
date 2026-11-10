@@ -64,4 +64,38 @@ class SendFormatTest {
         assertFalse(GlyphSupport.systemShows("", true, true) { it != qattLetter })
         assertTrue(GlyphSupport.systemShows("", false, false) { it == nomRare })
     }
+
+    @Test fun choicesPerApp() {
+        val c = SendFormatChoices()
+        assertEquals(null, c["com.whatsapp"])
+        c["com.whatsapp"] = T
+        c["com.example.notes"] = I
+        assertEquals(T, c["com.whatsapp"])
+        assertEquals(I, c["com.example.notes"])
+        assertEquals(null, c["org.telegram.messenger"])           // no choice: the start value decides
+        assertEquals(null, c[null])
+        c["com.whatsapp"] = I                                     // changed by the user
+        assertEquals(I, c["com.whatsapp"])
+        c.forget("com.whatsapp")
+        assertEquals(null, c["com.whatsapp"])
+        c[""] = T                                                 // no package name: nothing is stored
+        assertEquals(1, c.size)
+        // the same after a round trip through the settings
+        val d = SendFormatChoices.deserialize(c.serialize())
+        assertEquals(I, d["com.example.notes"])
+        assertEquals(1, d.size)
+        assertEquals(0, SendFormatChoices.deserialize(null).size)
+        assertEquals(0, SendFormatChoices.deserialize("garbage\n=TEXT\npkg=NOPE").size)
+        c.clear()
+        assertEquals(0, c.size)
+    }
+
+    @Test fun choicesKeepTheMostRecentApps() {
+        val c = SendFormatChoices(limit = 3)
+        for (i in 1..4) c["app$i"] = T
+        assertEquals(listOf("app2", "app3", "app4"), c.apps)
+        c["app2"] = I                                             // used again: now the most recent
+        c["app5"] = T
+        assertEquals(listOf("app4", "app2", "app5"), c.apps)
+    }
 }
