@@ -2,7 +2,7 @@
 
 An Android keyboard (IME) that types like Gboard (several languages, autocompletion) and, in a composition field of its own, writes Chữ Nôm, Quốc Âm Tân Tự (QATT) and PA, mixed, and inserts the result as text or as an image.
 
-Status: planning (2026-11-10). Open decision: the base keyboard (licence, see below).
+Status: planning (2026-11-10). Base: HeliBoard, the app is open source under GPL-3.0.
 
 ## 1. Base keyboard
 
@@ -10,8 +10,8 @@ Gboard is proprietary and cannot be extended; "compatible with Gboard" only mean
 
 The keyboard is a fork of an open-source keyboard:
 
-- **HeliBoard** (fork of AOSP LatinIME / OpenBoard, GPL-3.0): closest to Gboard, dictionaries and suggestions for English, German and many more, layouts (QWERTY, QWERTZ, …), the `Combiner` architecture for input logic (Hangul exists; Telex fits there). Proposed, if the app may be open source under GPL-3.0.
-- **FlorisBoard** (Apache-2.0): modern Kotlin and Jetpack Compose, weaker suggestions. The alternative if GPL is not wanted.
+- **HeliBoard** (fork of AOSP LatinIME / OpenBoard, GPL-3.0), **chosen**: closest to Gboard, dictionaries and suggestions for English, German and many more, layouts (QWERTY, QWERTZ, …), the `Combiner` architecture for input logic (Hangul exists; Telex fits there). The app is therefore open source under GPL-3.0.
+- FlorisBoard (Apache-2.0, Kotlin and Compose, weaker suggestions) was the alternative.
 
 What is special lives in a panel of our own (the composition field), so the base only has to type and suggest well.
 
@@ -24,7 +24,7 @@ What is special lives in a panel of our own (the composition field), so the base
 
 - The keyboard writes plain text into the app, with the autocompletion of the active language (Vietnamese with Telex, English, German, …).
 - **✎** shows the composition field. The current word in the app is **not** carried into the field.
-- **⚙** settings: languages, whether PA and QATT appear among the candidates, text or image (also switchable in the field).
+- **⚙** settings: languages, whether PA and QATT appear among the candidates, what Space does in the field (see below), text or image (also switchable in the field).
 - Vietnamese needs Telex in normal mode too, and a word list for the suggestions (check whether HeliBoard has a usable one, else build one from our data).
 
 ## 3. Composition mode
@@ -42,7 +42,8 @@ What is special lives in a panel of our own (the composition field), so the base
 - **Selected** (a tap into the field): the keys type into the field. **Not selected** (a tap into the text field of the app): the keys type into the app again, the bar shows the normal autocompletion; the field stays with its content.
 - In the field one types Telex; the current word stands underlined as Quốc Ngữ.
 - The candidate bar has 5 places, always in this order: **PA, QATT, then Chữ Nôm**. PA and QATT can be hidden in ⚙; the Nôm candidates then move up.
-- A tap on a candidate replaces the word. Space leaves the word as Quốc Ngữ (candidates are taken only by tapping). Everything can be mixed in the field.
+- A tap on a candidate replaces the word. Everything can be mixed in the field.
+- **Space** in the field, a setting in ⚙ (vi in brackets): *Nothing* (Không; the default: a real space, the word stays Quốc Ngữ, candidates are taken only by tapping), *PA*, *QATT*, *Chữ Nôm* (the first Nôm candidate). With PA, QATT or Chữ Nôm, Space converts the word before the cursor and is swallowed (no space between cells, as in the web editor `js/qatt-writer.js`); without a word before the cursor (or without a glyph for it) it is a real space.
 - The field draws every run in its font: PA, QATT, CJK (Chữ Nôm), Latin. Horizontal text only.
 - **Text | Image** switch, right of the field:
   - Text: the field looks like a normal input, with a blinking cursor; sending commits the raw text (the user needs the right font to read it; that is left to the user).
