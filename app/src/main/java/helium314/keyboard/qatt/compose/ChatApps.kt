@@ -12,7 +12,7 @@ object ChatApps {
      * Only names that are rare in other packages; X is found by "twitter" (its package is still com.twitter.android), not by "x".
      */
     val NAME_PARTS = listOf(
-        "facebook", "instagram", "messenger", "whatsapp", "telegram", "discord", "snapchat", "twitter", "viber", "zalo", "linkedin", "pinterest", "tumblr", "mastodon",
+        "facebook", "instagram", "messenger", "whatsapp", "telegram", "discord", "snapchat", "twitter", "viber", ".zalo", "linkedin", "pinterest", "tumblr", "mastodon",
     )
 
     /** Packages whose name has no such part (from memory: check on a device). The user can add more in the settings (`extra`). */

@@ -42,6 +42,7 @@ class SendFormatTest {
         assertTrue(ChatApps.isChatOrSocial("com.instagram.barcelona"))
         assertTrue(ChatApps.isChatOrSocial("com.example.MyMessenger"))
         assertTrue(ChatApps.isChatOrSocial("com.twitter.android"))               // X
+        assertFalse(ChatApps.isChatOrSocial("com.gonzalo.app"))                  // ".zalo" needs the dot
         assertFalse(ChatApps.isChatOrSocial("com.x.app"))                        // not "x" alone
         assertFalse(ChatApps.isChatOrSocial("com.example.xyz.box"))
         assertFalse(ChatApps.isChatOrSocial("com.android.timeline.offline"))     // "line" is no part of a name
