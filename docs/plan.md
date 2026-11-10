@@ -30,12 +30,12 @@ What is special lives in a panel of our own (the composition field), so the base
 ## 3. Composition mode
 
 ```
-[←] ┌──────────────────────────────┐ [Text|Image]
-    │ 𡨸喃 [QATT] [PA] ngươi▏        │
-    └──────────────────────────────┘
-[PA] [QATT] [字] [字] [字]                       [↑]
+[←] ┌───────────────────────────────┐
+    │ 𡨸喃 [QATT] [PA] ngươi▏         │
+    └───────────────────────────────┘
+[PA] [QATT] [字] [字] [字]      [Text|Image] [↑]
  q  w  e  r  t  y  u  i  o  p
-                                                 [⏎]
+                                      [⏎]
 ```
 
 - Shown above the candidate bar, like the translation field of Gboard.
@@ -45,18 +45,18 @@ What is special lives in a panel of our own (the composition field), so the base
 - A tap on a candidate replaces the word. Everything can be mixed in the field.
 - **Space** in the field, a setting in ⚙ (vi in brackets): *Nothing* (Không; the default: a real space, the word stays Quốc Ngữ, candidates are taken only by tapping), *PA*, *QATT*, *Chữ Nôm* (the first Nôm candidate). With PA, QATT or Chữ Nôm, Space converts the word before the cursor and is swallowed (no space between cells, as in the web editor `js/qatt-writer.js`); without a word before the cursor (or without a glyph for it) it is a real space.
 - The field draws every run in its font: PA, QATT, CJK (Chữ Nôm), Latin. Horizontal text only.
-- **Text | Image** switch, right of the field:
-  - Text: the field looks like a normal input, with a blinking cursor; sending commits the raw text (the user needs the right font to read it; that is left to the user).
-  - Image: the field looks like an image (a sticker), the cursor does not blink; sending renders the text **black on white** and inserts it with `commitContent`. If the app accepts no images (`EditorInfo.contentMimeTypes`), the raw text is committed instead.
-- **Several lines and sending**:
-  - The first ⏎ inserts a line break and shows a hint "⏎ again to send" (vi "⏎ lần nữa để gửi").
-  - A second ⏎ directly after it sends (the line break just inserted is removed). Any other key in between ends that chance.
-  - In addition, **↑** at the right end of the bar always sends.
+- **Sending** is only done by the **↑** button at the right end of the bar. ⏎ in the field is an ordinary line break (several lines are allowed); there is no "⏎ twice to send".
+- **Text | Image** selector, left of ↑ (the format of sending):
+  - Text: the field looks like a normal input, with a blinking cursor; ↑ commits the raw text (to read it, the system needs the fonts).
+  - Image: the field looks like an image (a sticker), the cursor does not blink; ↑ renders the text **black on white** and inserts it with `commitContent`. If the app accepts no images (`EditorInfo.contentMimeTypes`), the raw text is committed instead.
+  - **Start value** (as long as the user has not chosen): Text if the system can show the characters with its fonts, else Image if the input field accepts images, else Text. It is decided again for every input field.
+  - **A choice of the user** (a tap on Text or Image) is stored and holds, in every field, until the user changes it. (If the field accepts no images, Image still sends text, see above.)
+  - **Can the system show the text?** Probe with `Paint.hasGlyph` (API 23; below it: no) on the default typeface, i.e. the fonts of the system with their fallbacks, for one character of each script: a QATT letter (U+F0000), a PA letter (U+F00B2) and a rare Chữ Nôm character (CJK Ext. B). Text is "showable" when all that appear in the field have glyphs. A QATT or PA font that the user has installed in the system counts. This tells what **this** device shows, not what the recipient's device shows; the choice of the user overrides it.
 - **←** discards the content of the field and returns to normal mode.
 
 ## 4. The logic
 
-The logic exists in the website (`qtng/qatt`): `js/parser.js` (Telex, syllable parts, Hợp Thư), `js/qatt-text.js` (QATT cells, from U+F0000), `js/pa-text.js` (PA), and in `qtng/chunom`: `js/ime.js` and `dict.csv` (the Nôm candidates).
+The logic exists in the website (`qtng/qatt`): `js/parser.js` (Telex, syllable parts, Hợp Thư), `js/qatt-text.js` (QATT cells, from U+F0000), `js/pa-text.js` (PA), and in `qtng/chunom`: `js/ime.js` with `js/generated_chars.json` and `js/base_chars.json` (the Nôm candidates).
 
 - **Port to Kotlin** (about 40 KB of logic; a keyboard needs low latency), not an embedded JS engine.
 - **Golden tests**: a Node script runs the JS files over all syllables (Quốc Ngữ → QATT, → PA, the Nôm candidates) and writes JSON; the Kotlin tests compare against it. A change of the JS shows up as a failing test.
