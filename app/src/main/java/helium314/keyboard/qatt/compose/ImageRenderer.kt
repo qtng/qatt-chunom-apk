@@ -5,7 +5,9 @@ package helium314.keyboard.qatt.compose
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Shader
 import android.net.Uri
 import android.text.Layout
 import android.text.StaticLayout
@@ -33,7 +35,11 @@ object ImageRenderer {
         val height = layout.height.coerceAtLeast(1) + 2 * PADDING
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        canvas.drawColor(style.background)
+        val end = style.backgroundEnd
+        if (end == null) canvas.drawColor(style.background)
+        else canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
+            shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), style.background, end, Shader.TileMode.CLAMP)   // top left to bottom right
+        })
         canvas.translate(PADDING.toFloat(), PADDING.toFloat())
         layout.draw(canvas)
         return bitmap

@@ -12,22 +12,28 @@ import android.text.TextPaint
 import android.text.style.MetricAffectingSpan
 
 /**
- * The fonts the composition field and the image are drawn with (assets/fonts, see tools/fonts/fetch_fonts.py): QATT Pen letters, PA Pen and the most
- * frequent Chữ Nôm characters of QATT Pen. A character they do not have is drawn with the fonts of the system. A font that cannot be loaded is skipped.
+ * The fonts the composition field and the image are drawn with (assets/fonts, see tools/fonts/fetch_fonts.py): the letters, PA and the most
+ * frequent Chữ Nôm characters of the chosen [ComposeFont] (QATT Pen, Migoi, Phong Thảo). A character they do not have is drawn with the fonts of the system. A font that cannot be loaded is skipped.
  */
-class ComposeFonts(context: Context) {
-    private fun load(context: Context, name: String): Typeface? = try { Typeface.createFromAsset(context.assets, "fonts/$name") } catch (e: Exception) { null }
+class ComposeFonts(private val context: Context) {
+    private class Loaded(val qatt: Typeface?, val pa: Typeface?, val nom: Typeface?) {
+        val nomPaint = nom?.let { Paint().apply { typeface = it } }
+    }
 
-    val qatt: Typeface? = load(context, "qatt-pen-letters.ttf")
-    val pa: Typeface? = load(context, "pa-pen.ttf")
-    val nom: Typeface? = load(context, "qatt-pen-00.ttf")
-    private val nomPaint = nom?.let { Paint().apply { typeface = it } }
+    private fun load(name: String): Typeface? = try { Typeface.createFromAsset(context.assets, "fonts/$name") } catch (e: Exception) { null }
+
+    private val loaded = HashMap<ComposeFont, Loaded>()
+
+    /** The font in use; changing it changes the next drawing. */
+    var family: ComposeFont = ComposeFont.PEN
+
+    private val current: Loaded get() = loaded.getOrPut(family) { Loaded(load(family.letters), load(family.pa), load(family.nom)) }
 
     /** The font for a character of the script, null: the font of the system. */
     fun typefaceFor(script: Script, codePoint: Int): Typeface? = when (script) {
-        Script.QATT -> qatt
-        Script.PA -> pa
-        Script.CJK -> if (Build.VERSION.SDK_INT >= 23 && nomPaint?.hasGlyph(String(Character.toChars(codePoint))) == true) nom else null
+        Script.QATT -> current.qatt
+        Script.PA -> current.pa
+        Script.CJK -> if (Build.VERSION.SDK_INT >= 23 && current.nomPaint?.hasGlyph(String(Character.toChars(codePoint))) == true) current.nom else null
         Script.OTHER -> null
     }
 

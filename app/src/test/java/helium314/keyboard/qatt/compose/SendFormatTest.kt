@@ -112,16 +112,38 @@ class SendFormatTest {
     }
 
     @Test fun selectorEntriesAndStyles() {
-        assertEquals(3, SendChoice.ALL.size)
+        assertEquals(1 + ImageStyle.values().size, SendChoice.ALL.size)
         assertEquals(SendChoice.TEXT, SendChoice.ALL[0])
-        assertEquals(ImageStyle.BLACK_ON_WHITE, SendChoice.ALL[1].style)
+        assertEquals(ImageStyle.BLACK_ON_WHITE, SendChoice.ALL[1].style)         // the order of the first entries is kept
         assertEquals(ImageStyle.WHITE_ON_BLACK, SendChoice.ALL[2].style)
+        assertTrue(SendChoice.ALL.drop(1).all { it.format == SendFormat.IMAGE })
         assertEquals(0xFF000000.toInt(), ImageStyle.BLACK_ON_WHITE.foreground)
         assertEquals(0xFFFFFFFF.toInt(), ImageStyle.BLACK_ON_WHITE.background)
         assertEquals(ImageStyle.BLACK_ON_WHITE.foreground, ImageStyle.WHITE_ON_BLACK.background)
+        // solid colours and gradients
+        assertFalse(ImageStyle.GOLD_ON_DARK.isGradient)
+        assertTrue(ImageStyle.PINK_GRADIENT.isGradient)
+        assertTrue(ImageStyle.values().filter { it.isGradient }.all { it.backgroundEnd != it.background })
+        // the text stands out from the background (not the same colour)
+        assertTrue(ImageStyle.values().all { it.foreground != it.background })
+        // the names are stored: a few must never change
+        assertEquals(listOf("BLACK_ON_WHITE", "WHITE_ON_BLACK"), ImageStyle.values().take(2).map { it.name })
         // no choice: the start value in the default style
         assertEquals(SendChoice(I, ImageStyle.WHITE_ON_BLACK), SendFormatPolicy.selected(null, true, true, true, ImageStyle.WHITE_ON_BLACK))
         assertEquals(SendChoice.TEXT, SendFormatPolicy.selected(null, false, false, true))
         assertEquals(SendChoice(I, ImageStyle.WHITE_ON_BLACK), SendFormatPolicy.selected(SendChoice(I, ImageStyle.WHITE_ON_BLACK), false, false, true))
+    }
+
+    @Test fun everyStyleSurvivesTheSettings() {
+        val c = SendFormatChoices()
+        ImageStyle.values().forEachIndexed { i, st -> c["app$i"] = SendChoice(I, st) }
+        val d = SendFormatChoices.deserialize(c.serialize())
+        ImageStyle.values().forEachIndexed { i, st -> assertEquals(SendChoice(I, st), d["app$i"]) }
+    }
+
+    @Test fun fonts() {
+        assertEquals(listOf("QATT Pen", "Migoi", "Phong Thảo"), ComposeFont.values().map { it.label })
+        assertTrue(ComposeFont.values().all { it.letters.endsWith(".ttf") && it.pa.endsWith(".ttf") && it.nom.endsWith(".ttf") })
+        assertEquals(ComposeFont.values().size * 3, ComposeFont.values().flatMap { listOf(it.letters, it.pa, it.nom) }.toSet().size)   // no file twice
     }
 }

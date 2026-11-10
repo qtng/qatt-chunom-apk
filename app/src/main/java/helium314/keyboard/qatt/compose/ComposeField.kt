@@ -102,24 +102,35 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
         committed.setLength(minOf(q, p))
     }
 
-    /** The candidates for the word being typed. */
-    fun candidates(): List<Candidate> {
+    /** All candidates for the word being typed: PA, QATT (each if switched on and the word has a glyph), then Chữ Nôm (at most [MAX_NOM]). */
+    fun allCandidates(): List<Candidate> {
         val w = word
         if (w.isEmpty()) return emptyList()
         val out = LinkedHashMap<String, Candidate>()
-        fun add(c: Candidate) { if (out.size < settings.slots && c.text.isNotEmpty() && c.text !in out) out[c.text] = c }
+        fun add(c: Candidate) { if (c.text.isNotEmpty() && c.text !in out) out[c.text] = c }
         if (settings.pa) PaText.word(w, parser)?.let { add(Candidate(Kind.PA, it)) }
         if (settings.qatt) QattText.word(w, parser)?.let { add(Candidate(Kind.QATT, it)) }
-        for (c in nom.lookup(w, settings.usage, settings.slots)) add(Candidate(Kind.NOM, c.glyph, c.reading))
+        for (c in nom.lookup(w, settings.usage, MAX_NOM)) add(Candidate(Kind.NOM, c.glyph, c.reading))
         return out.values.toList()
     }
 
-    /** A tap on candidate [index] of [candidates]: it replaces the word being typed. Returns it (null if there is none at that place). */
+    /** The candidates of the bar: the first [ComposeSettings.slots]; the others are shown when the user opens the list ([allCandidates]). */
+    fun candidates(): List<Candidate> = allCandidates().take(settings.slots)
+
+    /** Are there more candidates than the bar has places for? */
+    fun hasMoreCandidates(): Boolean = allCandidates().size > settings.slots
+
+    /** A tap on candidate [index] of [allCandidates] (the bar shows the first ones): it replaces the word being typed. Returns it (null if there is none at that place). */
     fun pick(index: Int): Candidate? {
-        val c = candidates().getOrNull(index) ?: return null
+        val c = allCandidates().getOrNull(index) ?: return null
         committed.append(c.text)
         keys.setLength(0)
         return c
+    }
+
+    companion object {
+        /** At most this many Chữ Nôm candidates. */
+        const val MAX_NOM = 60
     }
 
     /** Removes everything (the arrow to the left, or after sending). */

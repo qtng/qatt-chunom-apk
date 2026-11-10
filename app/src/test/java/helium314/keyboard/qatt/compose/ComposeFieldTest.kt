@@ -7,6 +7,7 @@ import helium314.keyboard.qatt.VietnameseParser
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
@@ -37,6 +38,28 @@ class ComposeFieldTest {
         assertEquals(QattText.word("người", parser), c[1].text)
         assertEquals(nom.lookup("người").take(3).map { it.glyph }, c.drop(2).map { it.text })
         assertTrue(c.drop(2).all { it.reading != null })
+    }
+
+    @Test fun moreCandidatesThanPlaces() {
+        val f = field()
+        f.type("nguwowif")
+        val all = f.allCandidates()
+        assertTrue(all.size > 5, "all: ${all.size}")
+        assertTrue(f.hasMoreCandidates())
+        assertEquals(all.take(5), f.candidates())
+        assertEquals(all.map { it.text }.toSet().size, all.size)                 // no candidate twice
+        assertTrue(all.size <= 2 + ComposeField.MAX_NOM)
+        assertEquals(listOf(Kind.PA, Kind.QATT), all.take(2).map { it.kind })
+        assertTrue(all.drop(2).all { it.kind == Kind.NOM })
+        // a candidate from the list that is opened
+        val sixth = all[7]
+        assertEquals(sixth, f.pick(7))
+        assertEquals(sixth.text, f.text)
+        // a word with few candidates: nothing more
+        val g = field()
+        g.type("hello")
+        assertFalse(g.hasMoreCandidates())
+        assertTrue(g.allCandidates().size <= 5)
     }
 
     @Test fun hiddenScriptsMakeRoomForNom() {

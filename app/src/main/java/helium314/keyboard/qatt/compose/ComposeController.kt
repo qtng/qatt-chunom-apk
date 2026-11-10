@@ -37,6 +37,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     private var panel: ComposePanelView? = null
     private var stripContainer: View? = null
+    private var keyboardWrapper: View? = null
+    private var keyboardHeight = 0
+    private var expanded = false      // the rest of the candidates as a grid in the place of the keyboard
 
     var active = false
         private set
@@ -57,6 +60,8 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         frame.addView(p, 0)
         panel = p
         stripContainer = inputView.findViewById(R.id.strip_container)
+        keyboardWrapper = inputView.findViewById(R.id.keyboard_view_wrapper)
+        expanded = false
         refresh()
     }
 
@@ -86,17 +91,19 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (fieldHolder.isInitialized()) field.clear()
         active = false
         selected = false
+        expanded = false
         refresh()
     }
 
     private fun select() { selected = true; refresh() }
-    private fun deselect() { selected = false; refresh() }
+    private fun deselect() { selected = false; expanded = false; refresh() }
 
     // ---------- keys ----------
 
     /** A key of the keyboard. Returns true if the field took it (then the app does not get it). */
     fun onEvent(event: Event): Boolean {
         if (!active || !selected) return false
+        expanded = false
         val f = field
         when {
             event.keyCode == KeyCode.DELETE -> f.backspace()
@@ -112,6 +119,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     /** Text from the keyboard that is more than a key (an emoji, a text of a popup key). */
     fun onTextInput(text: String?): Boolean {
         if (!active || !selected || text == null) return false
+        expanded = false
         field.type(text)
         refresh()
         return true
@@ -126,6 +134,13 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     override fun onCandidate(index: Int) {
         val c = field.pick(index) ?: return
         if (c.kind == Kind.NOM) learn(c.text)
+        expanded = false
+        refresh()
+    }
+
+    override fun onMoreToggle() {
+        if (!expanded) keyboardWrapper?.height?.takeIf { it > 0 }?.let { keyboardHeight = it }   // the grid is as high as the keyboard
+        expanded = !expanded
         refresh()
     }
 
@@ -176,12 +191,15 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         )
         modes.forEachIndexed { i, (mode, label) -> menu.menu.add(1, 10 + i, 10 + i, label).apply { isCheckable = true; isChecked = s.space == mode } }
         menu.menu.setGroupCheckable(1, true, true)
+        ComposeFont.values().forEachIndexed { i, font -> menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font } }
+        menu.menu.setGroupCheckable(2, true, true)
         menu.menu.add(Menu.NONE, 20, 20, R.string.compose_forget_choices)
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> saveSettings(s.copy(pa = !s.pa))
                 2 -> saveSettings(s.copy(qatt = !s.qatt))
                 in 10..13 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
+                in 30..32 -> { fonts.family = ComposeFont.values()[item.itemId - 30]; prefs.edit { putString(PREF_FONT, fonts.family.name) } }
                 20 -> { choices.clear(); prefs.edit { putString(PREF_CHOICES, "") } }
             }
             refresh()
@@ -197,10 +215,20 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         return SendFormatPolicy.selected(choices[packageName], chatApp, acceptsImages, shows)
     }
 
-    private fun longLabel(c: SendChoice) = ime.getString(when {
-        c.format == SendFormat.TEXT -> R.string.compose_format_text
-        c.style == ImageStyle.BLACK_ON_WHITE -> R.string.compose_format_image_bw
-        else -> R.string.compose_format_image_wb
+    private fun longLabel(c: SendChoice) = ime.getString(if (c.format == SendFormat.TEXT) R.string.compose_format_text else when (c.style) {
+        ImageStyle.BLACK_ON_WHITE -> R.string.compose_format_image_bw
+        ImageStyle.WHITE_ON_BLACK -> R.string.compose_format_image_wb
+        ImageStyle.GOLD_ON_DARK -> R.string.compose_style_gold_on_dark
+        ImageStyle.RED_ON_CREAM -> R.string.compose_style_red_on_cream
+        ImageStyle.PINK_GRADIENT -> R.string.compose_style_pink_gradient
+        ImageStyle.SUNSET_GRADIENT -> R.string.compose_style_sunset_gradient
+        ImageStyle.OCEAN_GRADIENT -> R.string.compose_style_ocean_gradient
+    })
+
+    private fun fontLabel(f: ComposeFont) = ime.getString(when (f) {
+        ComposeFont.PEN -> R.string.compose_font_pen
+        ComposeFont.MIGOI -> R.string.compose_font_migoi
+        ComposeFont.PHONGTHAO -> R.string.compose_font_phongthao
     })
 
     private fun refresh() {
@@ -208,16 +236,31 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (!active) {
             p.visibility = View.GONE
             stripContainer?.visibility = View.VISIBLE
+            keyboardWrapper?.visibility = View.VISIBLE
             return
         }
         p.visibility = View.VISIBLE
         stripContainer?.visibility = if (selected) View.GONE else View.VISIBLE
         val f = field
+        fonts.family = ComposeFont.values().firstOrNull { it.name == prefs.getString(PREF_FONT, "") } ?: fonts.family
         val choice = currentChoice()
         p.setContent(f.text, f.composingStart)
         p.setLook(choice.format == SendFormat.IMAGE, choice.style, selected)
         p.setFormatLabel(ime.getString(if (choice.format == SendFormat.TEXT) R.string.compose_format_text else R.string.compose_format_image))
-        p.setCandidates(if (selected) f.candidates() else emptyList())
+        val all = if (selected) f.allCandidates() else emptyList()
+        val places = f.settings.slots
+        val more = all.size > places
+        if (!more) expanded = false
+        p.setCandidates(all.take(places))
+        p.setMore(more, expanded)
+        // the rest of the candidates replaces the keyboard
+        if (expanded && selected && more) {
+            keyboardWrapper?.visibility = View.GONE
+            p.showGrid(all.drop(places), places, keyboardHeight)
+        } else {
+            keyboardWrapper?.visibility = View.VISIBLE
+            p.hideGrid()
+        }
     }
 
     // ---------- settings ----------
@@ -256,6 +299,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         private const val PREF_QATT = "qatt_compose_qatt"
         private const val PREF_SPACE = "qatt_compose_space"
         private const val PREF_USAGE = "qatt_compose_usage"
+        private const val PREF_FONT = "qatt_compose_font"
         private const val MAX_USAGE = 1000
     }
 }

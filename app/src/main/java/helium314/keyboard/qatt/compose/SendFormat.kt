@@ -4,10 +4,27 @@ package helium314.keyboard.qatt.compose
 
 enum class SendFormat { TEXT, IMAGE }
 
-/** The colours of an image (ARGB): the text and the background. */
-enum class ImageStyle(val foreground: Int, val background: Int) {
+/**
+ * The look of an image: the colour of the text and of the background; a background with an [backgroundEnd] is a gradient from the top left to the bottom right.
+ * The names are stored in the settings: do not rename, add at the end.
+ */
+enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEnd: Int? = null) {
     BLACK_ON_WHITE(0xFF000000.toInt(), 0xFFFFFFFF.toInt()),
     WHITE_ON_BLACK(0xFFFFFFFF.toInt(), 0xFF000000.toInt()),
+    GOLD_ON_DARK(0xFFE8BD55.toInt(), 0xFF16181F.toInt()),
+    RED_ON_CREAM(0xFFB3261E.toInt(), 0xFFF8F0DC.toInt()),
+    PINK_GRADIENT(0xFFFFFFFF.toInt(), 0xFFEC6FA6.toInt(), 0xFFB0245E.toInt()),
+    SUNSET_GRADIENT(0xFFFFFFFF.toInt(), 0xFFF2994A.toInt(), 0xFF6A3093.toInt()),
+    OCEAN_GRADIENT(0xFFFFFFFF.toInt(), 0xFF1FA2A6.toInt(), 0xFF1F4E9C.toInt());
+
+    val isGradient get() = backgroundEnd != null
+}
+
+/** The fonts of the field and of the images (assets/fonts, tools/fonts/fetch_fonts.py): the QATT letters, PA and slice 00 of the Chữ Nôm of the font. */
+enum class ComposeFont(val label: String, val letters: String, val pa: String, val nom: String) {
+    PEN("QATT Pen", "qatt-pen-letters.ttf", "pa-pen.ttf", "qatt-pen-00.ttf"),
+    MIGOI("Migoi", "migoi-letters.ttf", "pa-migoi.ttf", "migoi-00.ttf"),
+    PHONGTHAO("Phong Thảo", "phongthao-letters.ttf", "pa-phongthao.ttf", "phongthao-00.ttf"),
 }
 
 /** What the selector shows: Text, or an Image in a style. */
@@ -15,8 +32,8 @@ data class SendChoice(val format: SendFormat, val style: ImageStyle = ImageStyle
     companion object {
         val TEXT = SendChoice(SendFormat.TEXT)
         val IMAGE = SendChoice(SendFormat.IMAGE)
-        /** The entries of the dropdown, in this order. */
-        val ALL = listOf(TEXT, SendChoice(SendFormat.IMAGE, ImageStyle.BLACK_ON_WHITE), SendChoice(SendFormat.IMAGE, ImageStyle.WHITE_ON_BLACK))
+        /** The entries of the dropdown, in this order: Text, then an Image in each style. */
+        val ALL = listOf(TEXT) + ImageStyle.values().map { SendChoice(SendFormat.IMAGE, it) }
     }
 }
 

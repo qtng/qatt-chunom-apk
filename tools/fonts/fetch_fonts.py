@@ -4,7 +4,7 @@
     pip install fonttools brotli
     python3 tools/fonts/fetch_fonts.py
 
-QATT letters (U+F0000..), PA (U+F00B0..) and the most frequent Chữ Nôm characters (slice 00 of QATT Pen). Everything else is drawn with the fonts of the system.
+QATT letters (U+F0000..), PA (U+F00B0..) and the most frequent Chữ Nôm characters (slice 00) of QATT Pen, Migoi and Phong Thảo (ComposeFont). Everything else is drawn with the fonts of the system.
 The fonts are NOT under the licence of the app (GPL-3.0): see app/src/main/assets/fonts/LICENSE.txt.
 """
 import io, os, sys, urllib.request
@@ -12,9 +12,9 @@ from fontTools.ttLib import TTFont
 
 BASE = "https://cdn.qatt.org/fonts/"
 FONTS = {                       # file written -> file on the CDN
-    "qatt-pen-letters.ttf": "qatt-pen-letters.woff2",
-    "pa-pen.ttf": "pa-pen.woff2",
-    "qatt-pen-00.ttf": "web/qatt-pen-00.woff2",
+    "qatt-pen-letters.ttf": "qatt-pen-letters.woff2", "pa-pen.ttf": "pa-pen.woff2", "qatt-pen-00.ttf": "web/qatt-pen-00.woff2",
+    "migoi-letters.ttf": "migoi-letters.woff2", "pa-migoi.ttf": "pa-migoi.woff2", "migoi-00.ttf": "web/migoi-00.woff2",
+    "phongthao-letters.ttf": "phongthao-letters.woff2", "pa-phongthao.ttf": "pa-phongthao.woff2", "phongthao-00.ttf": "web/phongthao-00.woff2",
 }
 out = os.path.join(os.path.dirname(__file__), "../../app/src/main/assets/fonts")
 os.makedirs(out, exist_ok=True)
