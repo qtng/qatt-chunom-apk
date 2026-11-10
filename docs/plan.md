@@ -71,7 +71,7 @@ The logic exists in the website (`qtng/qatt`): `js/parser.js` (Telex, syllable p
 ## 6. Steps
 
 1. Fork of the base keyboard in this repository, builds and runs; Telex for Vietnamese.
-2. Kotlin port of `parser.js`, `qatt-text.js`, `pa-text.js` with the golden tests from Node.
+2. Kotlin port of `parser.js`, `qatt-text.js`, `pa-text.js` with golden tests from Node (done, see `docs/port.md`).
 3. Nôm data build and candidate lookup.
 4. The composition field: selection, candidates PA/QATT/Nôm, mixed rendering, ⏎ ⏎ / ↑, ←.
 5. Sending as an image (`commitContent`) with the fallback to text.
