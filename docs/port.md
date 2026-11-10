@@ -18,3 +18,14 @@ The JavaScript is the reference. `tools/golden/make_golden.mjs` runs it over abo
 Then run the tests; a difference is a change of the JavaScript that the port does not have yet.
 
 Known difference: `QattText.decode` of a string that is no cell at all (e.g. `"x"`) returns `null`; the JavaScript returns an object with undefined fields (the reading is `"?"` in both).
+
+## The Chữ Nôm dictionary
+
+`NomDictionary` (same folder) gives the candidates for a Quốc Ngữ word in the order of `VietIme` of `js/ime.js` of qtng/chunom: readings that start with the word, short remainders first, then entries with a definition (and, later, the glyphs the user chose most often: `usage`), then the order of the data. A multi-syllable word is found by its letters run together ("chữ nôm" finds `chữNôm`).
+
+The data is `app/src/main/assets/nom/nom.txt` (about 230 KB, 37,000 glyph entries), built from `js/generated_chars.json` and `js/base_chars.json` of qtng/chunom (the data of the website, not `dict.csv`):
+
+    node tools/nom/build_nom.mjs --chunom ../chunom       # after a change of the dictionaries of the website
+    node tools/golden/make_golden.mjs --chunom ../chunom --qatt ../qatt   # golden files (also the candidates: 10,000 words)
+
+`NomDictionaryTest` compares the first 12 candidates and the number of results for every reading of the dictionary, its prefixes of up to three letters and a few odd inputs with `VietIme.lookup` of the JavaScript.

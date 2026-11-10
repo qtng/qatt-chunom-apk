@@ -6,6 +6,7 @@ import zlib from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { VietnameseParser as P, QattText as Q, PaText as A, QATT } from './load.mjs';
+import { loadIme, CHUNOM } from './load_ime.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const out = path.join(root, 'app/src/test/resources/golden');
@@ -87,3 +88,23 @@ for (const t of ['tự', 'người ta', 'ông']) {
 }
 write('misc.tsv.gz', [...misc, ...dels].join('\n') + '\n');
 console.log('misc', misc.length, dels.length);
+
+// ---- 4. the Chữ Nôm candidates (VietIme.lookup of js/ime.js) -----------------------------------------------------------------------------------
+// every reading of the dictionary as typed (with spaces), every prefix of up to 3 letters of it, a few odd inputs; the first 12 results (glyph, reading, defined) and the number
+const ime = await loadIme();
+const nomKeys = new Set();
+for (const line of fs.readFileSync(path.join(root, 'app/src/main/assets/nom/nom.txt'), 'utf8').split('\n')) {
+  const key = line.split('\t')[0];
+  if (!key) continue;
+  const reading = key.replace(/(\p{Lu})/gu, ' $1').trim().toLowerCase();
+  nomKeys.add(reading);
+  const letters = reading.replace(/[\s\-']/g, '');
+  for (let n = 1; n <= 3 && n < letters.length; n++) nomKeys.add(letters.slice(0, n));
+}
+for (const w of ['Người', 'NGƯỜI', 'chữ  nôm', "ng-ư'ờ i", ' ', '', 'x', 'qwerty', 'đ', 'nôm', 'nháy', 'geta']) nomKeys.add(w);
+const nomRows = [...nomKeys].sort().map(w => {
+  const r = ime.lookup(w);
+  return [JSON.stringify(w), r.length, ...r.slice(0, 12).map(c => [c.glyph, c.reading, c.definition ? 1 : 0].join('|'))].join('\t');
+});
+write('nom.tsv.gz', nomRows.join('\n') + '\n');
+console.log('nom', nomRows.length);
