@@ -23,7 +23,7 @@ object TelexEngine {
     private const val VOWELS = "aeiouy"
     private const val CIRC = 1; private const val BREVE = 2; private const val HORN = 3; private const val STROKE = 4
 
-    private class Ch(var base: Char, var mod: Int, val upper: Boolean, var key: Char = ' ')
+    private class Ch(var base: Char, var mod: Int, val upper: Boolean, var key: Char = ' ', val lone: Boolean = false)
 
     private class State(val modernStyle: Boolean) {
         val chars = ArrayList<Ch>()
@@ -114,13 +114,16 @@ object TelexEngine {
                             } else {
                                 val marked = n.filter { chars[it].key == 'w' }                     // all done already: undo
                                 if (marked.isNotEmpty()) {
-                                    for (i in marked) { chars[i].mod = 0; chars[i].key = ' ' }
-                                    literal.add('w'); add(k); done = true
+                                    // ww: the ư made by a lone w becomes the w again and the second w is not added (Unikey: ww -> w), else the marks are taken off
+                                    val lone = marked.firstOrNull { chars[it].lone }
+                                    if (lone != null) { val up = chars[lone].upper; chars.removeAt(lone); add(if (up) 'W' else 'w') }
+                                    else { for (i in marked) { chars[i].mod = 0; chars[i].key = ' ' }; add(k) }
+                                    literal.add('w'); done = true
                                 }
                             }
                         }
                     } else if (chars.none { it.base in VOWELS }) {
-                        chars.add(Ch('u', HORN, upper, 'w')); done = true                        // w alone: ư
+                        chars.add(Ch('u', HORN, upper, 'w', lone = true)); done = true                  // w alone: ư
                     }
                     if (!done) add(k)
                 }

@@ -51,3 +51,7 @@ Built, compiles, **not yet run on a device** (no emulator here, and the Robolect
 - Strings: `res/values/qatt_compose.xml`, Vietnamese drafts in `values-vi` (to be checked).
 
 Not done: moving the cursor in the field, auto-capitalisation inside the field, a list of the stored app choices (only "forget all"), the user's own list of chat apps (`extra` of `ChatApps`), the bundled CJK font for rare Chữ Nôm characters.
+
+## Telex compared with ime.js (2026-11-10)
+
+`tools/golden/telex_compare.mjs` types real Vietnamese syllables (14,019 of the word list of FrequencyWords, MIT / CC BY-SA, kept to the syllables of `nom.txt`) in two styles (tone at the end, tone right after the vowel) through `VietIme.telex` of `ime.js` and writes the result; `TelexEngine` was run over the same keys. With the modern tone placement (hoà, khoẻ, thuỷ as ime.js) 14 of 14,019 differ: ime.js leaves "uo" + w as "uơ" (duợc, nguời), the engine makes "ươ" (dược, người) as Unikey does; a tone typed right after the vowel stays there in ime.js ("thủy") but is placed by the rule in the engine ("thuỷ"); the engine leaves English words like "text" alone, ime.js does not. The engine needs about 1–2 µs per conversion on a PC (the keys of a word are converted again after every key), no problem for a phone. The combiner now uses the modern placement and ends the word at every non-letter (a comma was part of the composing word before); "ww" gives "w".

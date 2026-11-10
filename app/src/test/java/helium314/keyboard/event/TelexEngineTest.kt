@@ -25,6 +25,7 @@ class TelexEngineTest {
 
     @Test fun toneAnywhere() {
         t("toasn", "toán"); t("vieetj", "việt"); t("tuongw", "tương"); t("duocwj", "dược")
+        t("ww", "w"); t("Ww", "W"); t("nhww", "nhw"); t("www", "ww")
         t("hoaf", "hòa"); t("hoaf", "hoà", modern = true); t("thuys", "thuý", modern = true); t("khoer", "khoẻ", modern = true)
     }
 

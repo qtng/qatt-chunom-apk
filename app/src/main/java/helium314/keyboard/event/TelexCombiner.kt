@@ -30,7 +30,8 @@ class TelexCombiner : Combiner {
 
         val codePoint = event.codePoint
         val valid = codePoint != Integer.MAX_VALUE && Character.isValidCodePoint(codePoint)
-        if (event.isFunctionalKeyEvent || (valid && Character.isWhitespace(codePoint))) return commitAndReset(event)
+        // a space, a digit or a punctuation mark ends the word (it must not become part of the composing text and its suggestions)
+        if (event.isFunctionalKeyEvent || (valid && !Character.isLetter(codePoint))) return commitAndReset(event)
         if (!valid) return Event.createConsumedEvent(event)
 
         keys.appendCodePoint(codePoint)
@@ -38,7 +39,7 @@ class TelexCombiner : Combiner {
     }
 
     override val combiningStateFeedback: CharSequence
-        get() = TelexEngine.convert(keys.toString())
+        get() = TelexEngine.convert(keys.toString(), modernStyle = true)   // hoà, khoẻ, thuỷ as in ime.js of the website
 
     override fun reset() {
         keys.setLength(0)
