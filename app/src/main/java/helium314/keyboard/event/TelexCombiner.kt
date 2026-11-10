@@ -7,20 +7,21 @@ import helium314.keyboard.latin.common.Constants
 import java.util.ArrayList
 
 /**
- * Vietnamese Telex. Keeps the keys typed for the word and shows [TelexEngine.convert] of them as the composing text; the
- * logic is in the engine. Backspace removes the last key.
+ * Vietnamese Telex, as in the website (js/ime.js): a key is applied to the text of the word that is there ([TelexKey.key]), the
+ * combiner keeps no list of raw keys. So it cannot get out of step with the editor: a word that is resumed after a cursor move or
+ * an edit (events marked [Event.isAlreadyTyped]) is taken as it is, and the next key works on what is shown.
+ * Backspace removes the last character of the word. A space, a digit, a punctuation mark or a functional key ends the word.
  */
 class TelexCombiner : Combiner {
-    private val keys = StringBuilder()
+    private val text = StringBuilder()
 
     override fun processEvent(previousEvents: ArrayList<Event>?, event: Event): Event {
         if (event.keyCode == KeyCode.SHIFT) return event
 
         if (event.keyCode == KeyCode.DELETE) {
-            if (keys.isEmpty()) return event      // nothing composed: delete in the editor
-            val cp = keys.codePointBefore(keys.length)
-            keys.delete(keys.length - Character.charCount(cp), keys.length)
-            if (keys.isEmpty()) {
+            if (text.isEmpty()) return event      // nothing composed: delete in the editor
+            text.delete(text.length - Character.charCount(text.codePointBefore(text.length)), text.length)
+            if (text.isEmpty()) {
                 // as in the other combiners: leave composing cleanly, the delete must not reach the committed text
                 reset()
                 return Event.createHardwareKeypressEvent(0x20, Constants.CODE_SPACE, 0, event, event.isKeyRepeat)
@@ -34,15 +35,22 @@ class TelexCombiner : Combiner {
         if (event.isFunctionalKeyEvent || (valid && !Character.isLetter(codePoint))) return commitAndReset(event)
         if (!valid) return Event.createConsumedEvent(event)
 
-        keys.appendCodePoint(codePoint)
+        val key = String(Character.toChars(codePoint))
+        if (event.isAlreadyTyped) {
+            text.append(key)                                                // text that was already there: as it is
+        } else {
+            val before = text.toString()
+            text.setLength(0)
+            text.append(TelexKey.key(before, key) ?: (before + key))
+        }
         return Event.createConsumedEvent(event)
     }
 
     override val combiningStateFeedback: CharSequence
-        get() = TelexEngine.convert(keys.toString(), modernStyle = true)   // hoà, khoẻ, thuỷ as in ime.js of the website
+        get() = text.toString()
 
     override fun reset() {
-        keys.setLength(0)
+        text.setLength(0)
     }
 
     private fun commitAndReset(event: Event): Event {
