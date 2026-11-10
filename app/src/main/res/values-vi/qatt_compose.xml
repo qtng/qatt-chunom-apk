@@ -30,4 +30,9 @@
     <string name="compose_font_installed">Đã cài phông chữ</string>
     <string name="compose_font_invalid">Tệp này không phải là phông chữ dùng được</string>
     <string name="compose_style_ink_on_rice_paper">Ảnh, chữ đen trên giấy dó</string>
+    <string name="compose_update_font">Cập nhật tệp phông chữ… (%1$s, %2$s)</string>
+    <string name="compose_font_builtin">Dùng QATT Pen có sẵn trong ứng dụng</string>
+    <string name="compose_font_state_builtin">có sẵn</string>
+    <string name="compose_font_state_none">chưa cài</string>
+    <string name="compose_font_state_imported">đã nhập %1$s</string>
 </resources>

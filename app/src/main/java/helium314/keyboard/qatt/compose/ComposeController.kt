@@ -197,6 +197,8 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font && FontStore.isInstalled(ime, font) }
         }
         menu.menu.setGroupCheckable(2, true, true)
+        menu.menu.add(Menu.NONE, 22, 22, ime.getString(R.string.compose_update_font, fonts.family.label, fontState(fonts.family)))
+        if (FontStore.imported(ime, ComposeFont.PEN) != null) menu.menu.add(Menu.NONE, 23, 23, R.string.compose_font_builtin)
         menu.menu.add(Menu.NONE, 21, 21, R.string.compose_get_fonts)
         menu.menu.add(Menu.NONE, 20, 20, R.string.compose_forget_choices)
         menu.setOnMenuItemClickListener { item ->
@@ -206,6 +208,8 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
                 in 10..13 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
                 in 30..32 -> chooseFont(ComposeFont.values()[item.itemId - 30])
                 21 -> openFontPage()
+                22 -> launchImport(fonts.family)
+                23 -> { FontStore.remove(ime, ComposeFont.PEN); fonts.family = ComposeFont.PEN; prefs.edit { putString(PREF_FONT, ComposeFont.PEN.name) } }
                 20 -> { choices.clear(); prefs.edit { putString(PREF_CHOICES, "") } }
             }
             refresh()
@@ -218,9 +222,18 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (FontStore.isInstalled(ime, font)) {
             fonts.family = font
             prefs.edit { putString(PREF_FONT, font.name) }
-        } else {   // not in the app yet: the user chooses the file (it is installed and chosen when it is imported)
-            ime.startActivity(Intent(ime, FontImportActivity::class.java).putExtra(FontImportActivity.EXTRA_FONT, font.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        }
+        } else launchImport(font)   // not in the app yet: the user chooses the file (it is installed and chosen when it is imported)
+    }
+
+    /** The user chooses a font file for [font]: a new version of one that is in the app, or one that is not (the keyboard has no network of its own). */
+    private fun launchImport(font: ComposeFont) {
+        ime.startActivity(Intent(ime, FontImportActivity::class.java).putExtra(FontImportActivity.EXTRA_FONT, font.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+    /** "built in" or "imported 10 Nov 2026" */
+    private fun fontState(f: ComposeFont): String {
+        val file = FontStore.imported(ime, f) ?: return ime.getString(if (f.bundled) R.string.compose_font_state_builtin else R.string.compose_font_state_none)
+        return ime.getString(R.string.compose_font_state_imported, java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(file.lastModified())))
     }
 
     /** The page with the downloads of the fonts, in the browser (the keyboard has no network access of its own). */

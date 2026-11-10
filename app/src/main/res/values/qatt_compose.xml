@@ -32,4 +32,9 @@
     <string name="compose_font_installed">Font installed</string>
     <string name="compose_font_invalid">This file is not a usable font</string>
     <string name="compose_style_ink_on_rice_paper">Image, black on rice paper</string>
+    <string name="compose_update_font">Update the font file… (%1$s, %2$s)</string>
+    <string name="compose_font_builtin">Use the built-in QATT Pen</string>
+    <string name="compose_font_state_builtin">built in</string>
+    <string name="compose_font_state_none">not installed</string>
+    <string name="compose_font_state_imported">imported %1$s</string>
 </resources>
