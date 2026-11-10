@@ -2,7 +2,7 @@
 
 package helium314.keyboard.qatt.compose
 
-import helium314.keyboard.event.TelexEngine
+import helium314.keyboard.event.TelexKey
 import helium314.keyboard.qatt.NomDictionary
 import helium314.keyboard.qatt.PaText
 import helium314.keyboard.qatt.QattText
@@ -36,7 +36,7 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
     private val keys = StringBuilder()
 
     /** The word being typed as Quốc Ngữ ("" if none). */
-    val word: String get() = TelexEngine.convert(keys.toString())
+    val word: String get() = TelexKey.word(keys.toString())
 
     /** The text of the field: what is settled, then the word being typed. */
     val text: String get() = committed.toString() + word
