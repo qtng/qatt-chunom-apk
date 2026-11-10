@@ -61,6 +61,7 @@ import helium314.keyboard.latin.suggestions.Suggest;
 import helium314.keyboard.latin.suggestions.Suggest.OnGetSuggestedWordsCallback;
 import helium314.keyboard.latin.suggestions.SuggestedWords;
 import helium314.keyboard.latin.suggestions.SuggestedWordInfo;
+import helium314.keyboard.qatt.vi.ViSuggester;
 import helium314.keyboard.latin.suggestions.SuggestionStripViewAccessor;
 import helium314.keyboard.latin.utils.AsyncResultHolder;
 import helium314.keyboard.latin.utils.GestureDataGatheringKt;
@@ -162,6 +163,9 @@ public final class InputLogic {
      */
     // Vietnamese Telex: a key is applied to the text of the composing word (TelexKey), there is no combiner and no list of raw keys
     private boolean mTelex = false;
+    // Telex suggestions (no composing text): completions of the letters before the cursor, see updateTelexSuggestions
+    private ViSuggester mViSuggester;
+    private int mTelexPrefixLength = 0;
 
     public void startInput(String combiningSpec, SettingsValues settingsValues) {
         mConnection.onStartInput();
@@ -302,6 +306,9 @@ public final class InputLogic {
             // Rely on onCodeInput to do the complicated swapping/stripping logic consistently.
             Event event = Event.createPunctuationSuggestionPickedEvent(suggestionInfo);
             return onCodeInput(settingsValues, event, keyboardCapsMode, handler);
+        }
+        if (mTelex && mTelexPrefixLength > 0 && !suggestionInfo.isKindOf(SuggestedWordInfo.KIND_APP_DEFINED)) {
+            return pickTelexSuggestion(settingsValues, suggestionInfo, keyboardCapsMode);
         }
         if (GestureDataGatheringKt.useBackgroundGathering) {
             if (mWordComposer.isBatchMode())
@@ -1005,6 +1012,78 @@ public final class InputLogic {
      * @param settingsValues The current settings values.
      * @param inputTransaction The transaction in progress.
      */
+    private ViSuggester viSuggester() {
+        if (mViSuggester == null) {
+            try (java.io.Reader reader = new java.io.InputStreamReader(mLatinIME.getAssets().open("vi/words.txt"), java.nio.charset.StandardCharsets.UTF_8)) {
+                mViSuggester = new ViSuggester().load(reader);
+            } catch (java.io.IOException e) {
+                mViSuggester = new ViSuggester();
+            }
+        }
+        return mViSuggester;
+    }
+
+    /**
+     * Vietnamese suggestions without composing text: the letters before the cursor (at most seven, the longest syllable) are the
+     * prefix, the strip shows the typed text and its most frequent completions; a tap replaces the prefix (see pickTelexSuggestion).
+     */
+    private void updateTelexSuggestions(final SettingsValues settingsValues) {
+        mTelexPrefixLength = 0;
+        if (!settingsValues.needsToLookupSuggestions() || mConnection.hasSelection() || mConnection.getExpectedSelectionStart() < 0) {
+            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            return;
+        }
+        final CharSequence before = mConnection.getTextBeforeCursor(ViSuggester.MAX_SYLLABLE + 1, 0);
+        final CharSequence after = mConnection.getTextAfterCursor(1, 0);
+        if (before == null || (after != null && after.length() > 0 && Character.isLetter(after.charAt(0)))) {
+            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            return;
+        }
+        int n = 0;
+        while (n < before.length() && Character.isLetter(before.charAt(before.length() - 1 - n))) n++;
+        if (n == 0 || n > ViSuggester.MAX_SYLLABLE) {
+            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            return;
+        }
+        final String prefix = before.subSequence(before.length() - n, before.length()).toString();
+        final List<String> completions = viSuggester().complete(prefix, 3);
+        if (completions.isEmpty()) {
+            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            return;
+        }
+        final ArrayList<SuggestedWordInfo> list = new ArrayList<>();
+        final SuggestedWordInfo typed = new SuggestedWordInfo(prefix, "", SuggestedWordInfo.MAX_SCORE, SuggestedWordInfo.KIND_TYPED,
+                Dictionary.DICTIONARY_USER_TYPED, SuggestedWordInfo.NOT_AN_INDEX, SuggestedWordInfo.NOT_A_CONFIDENCE, null);
+        list.add(typed);
+        int score = SuggestedWordInfo.MAX_SCORE - 1;
+        for (final String word : completions) {
+            list.add(new SuggestedWordInfo(word, "", score--, SuggestedWordInfo.KIND_COMPLETION,
+                    Dictionary.DICTIONARY_HARDCODED, SuggestedWordInfo.NOT_AN_INDEX, SuggestedWordInfo.NOT_A_CONFIDENCE, null));
+        }
+        final SuggestedWords words = new SuggestedWords(list, null, typed, false, false, false, InputStyle.TYPING,
+                SuggestedWords.NOT_A_SEQUENCE_NUMBER);
+        mSuggestedWords = words;
+        mTelexPrefixLength = n;
+        mSuggestionStripViewAccessor.setSuggestions(words);
+    }
+
+    /** A tap on a Telex suggestion: the letters before the cursor are replaced by the word and a space. */
+    private InputTransaction pickTelexSuggestion(final SettingsValues settingsValues, final SuggestedWordInfo info, final CapsMode keyboardCapsMode) {
+        final Event event = Event.createSuggestionPickedEvent(info);
+        final InputTransaction inputTransaction = new InputTransaction(settingsValues, event, SystemClock.uptimeMillis(), mSpaceState, keyboardCapsMode);
+        inputTransaction.setDidAffectContents();
+        mConnection.beginBatchEdit();
+        mConnection.deleteTextBeforeCursor(mTelexPrefixLength);
+        mConnection.commitText(info.getWord() + " ", 1);
+        mConnection.endBatchEdit();
+        mTelexPrefixLength = 0;
+        mSpaceState = SpaceState.NONE;
+        inputTransaction.requireShiftUpdate(InputTransaction.SHIFT_UPDATE_NOW);
+        mSuggestedWords = SuggestedWords.getEmptyInstance();
+        mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+        return inputTransaction;
+    }
+
     /**
      * Vietnamese Telex without composing text (no underlined word, no composing region of the system): the key is applied to the text
      * before the cursor, as ime.js does to the value of an input field ([TelexKey]); only the part that changes is deleted and typed again.
@@ -1732,6 +1811,10 @@ public final class InputLogic {
     }
 
     public void performUpdateSuggestionStripSync(SettingsValues settingsValues, InputStyle inputStyle) {
+        if (mTelex) {
+            updateTelexSuggestions(settingsValues);
+            return;
+        }
         long startTimeMillis = 0;
         if (DebugFlags.DEBUG_ENABLED) {
             startTimeMillis = SystemClock.elapsedRealtime();
@@ -1799,13 +1882,16 @@ public final class InputLogic {
      * @param settingsValues the current values of the settings.
      */
     public void restartSuggestionsOnWordTouchedByCursor(SettingsValues settingsValues) {
+        if (mTelex) { // no composing text: completions of the letters before the cursor
+            updateTelexSuggestions(settingsValues);
+            return;
+        }
         // HACK: We may want to special-case some apps that exhibit bad behavior in case of
         // recorrection. This is a temporary, stopgap measure that will be removed later.
         // TODO: remove this.
         if (!settingsValues.mSpacingAndPunctuations.mCurrentLanguageHasSpacesOrWordIterator
                 // If no suggestions are requested, don't try restarting suggestions.
                 || !settingsValues.needsToLookupSuggestions()
-                || mTelex // Telex: no composing text, nothing is resumed
                 // If we are currently in a batch input, we must not resume suggestions, or the result
                 // of the batch input will replace the new composition. This may happen in the corner case
                 // that the app moves the cursor on its own accord during a batch input.
