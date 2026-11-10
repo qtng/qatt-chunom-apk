@@ -75,8 +75,8 @@ The logic exists in the website (`qtng/qatt`): `js/parser.js` (Telex, syllable p
 1. Fork of the base keyboard in this repository, builds and runs; Telex for Vietnamese.
 2. Kotlin port of `parser.js`, `qatt-text.js`, `pa-text.js` with golden tests from Node (done, see `docs/port.md`).
 3. Nôm data build and candidate lookup (done, see `docs/port.md`; not yet connected to the keyboard).
-4. The composition field: selection, candidates PA/QATT/Nôm, mixed rendering, ⏎ ⏎ / ↑, ←.
-5. Sending as an image (`commitContent`) with the fallback to text.
+4. The composition field: selection, candidates PA/QATT/Nôm, mixed rendering, ↑, ← (logic done and tested; the interface is built but not yet tried on a device, see `docs/port.md`).
+5. Sending as an image (`commitContent`) with the fallback to text (built, not yet tried on a device).
 6. Settings (⚙), Vietnamese translation of the interface, release (F-Droid / Play Store).
 
 Later, perhaps: multi-syllable Nôm words (e.g. "người ta"), learning of frequencies, variants (Tham Thư, neutral tone), a choice of fonts for the image.

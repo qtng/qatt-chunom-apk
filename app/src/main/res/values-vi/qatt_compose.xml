@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only. Drafts of translations by an AI: to be checked by a native speaker. -->
+<resources>
+    <string name="compose">Chữ Nôm, QATT, PA</string>
+    <string name="compose_hint">Chữ Nôm · QATT · PA</string>
+    <string name="compose_back">Đóng</string>
+    <string name="compose_send">Gửi</string>
+    <string name="compose_settings">Cài đặt</string>
+    <string name="compose_format_text">Văn bản</string>
+    <string name="compose_format_image">Ảnh</string>
+    <string name="compose_format_image_bw">Ảnh, chữ đen nền trắng</string>
+    <string name="compose_format_image_wb">Ảnh, chữ trắng nền đen</string>
+    <string name="compose_pa_candidates">PA trong danh sách gợi ý</string>
+    <string name="compose_qatt_candidates">QATT trong danh sách gợi ý</string>
+    <string name="compose_space_none">Phím cách: dấu cách</string>
+    <string name="compose_space_pa">Phím cách: chuyển sang PA</string>
+    <string name="compose_space_qatt">Phím cách: chuyển sang QATT</string>
+    <string name="compose_space_nom">Phím cách: chuyển sang Chữ Nôm</string>
+    <string name="compose_forget_choices">Quên lựa chọn Văn bản hoặc Ảnh của mọi ứng dụng</string>
+</resources>
