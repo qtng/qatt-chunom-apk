@@ -11,6 +11,7 @@ enum class SendFormat { TEXT, IMAGE }
 enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEnd: Int? = null) {
     BLACK_ON_WHITE(0xFF000000.toInt(), 0xFFFFFFFF.toInt()),
     WHITE_ON_BLACK(0xFFFFFFFF.toInt(), 0xFF000000.toInt()),
+    INK_ON_RICE_PAPER(0xFF1B1B1B.toInt(), 0xFFF3EAD3.toInt()),       // black ink on the colour of rice paper: the classic Asian look
     GOLD_ON_DARK(0xFFE8BD55.toInt(), 0xFF16181F.toInt()),
     RED_ON_CREAM(0xFFB3261E.toInt(), 0xFFF8F0DC.toInt()),
     PINK_GRADIENT(0xFFFFFFFF.toInt(), 0xFFEC6FA6.toInt(), 0xFFB0245E.toInt()),

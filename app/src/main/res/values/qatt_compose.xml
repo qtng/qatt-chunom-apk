@@ -31,4 +31,5 @@
     <string name="compose_get_fonts">Get fonts (browser)</string>
     <string name="compose_font_installed">Font installed</string>
     <string name="compose_font_invalid">This file is not a usable font</string>
+    <string name="compose_style_ink_on_rice_paper">Image, black on rice paper</string>
 </resources>

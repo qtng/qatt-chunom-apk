@@ -116,6 +116,9 @@ class SendFormatTest {
         assertEquals(SendChoice.TEXT, SendChoice.ALL[0])
         assertEquals(ImageStyle.BLACK_ON_WHITE, SendChoice.ALL[1].style)         // the order of the first entries is kept
         assertEquals(ImageStyle.WHITE_ON_BLACK, SendChoice.ALL[2].style)
+        assertEquals(ImageStyle.INK_ON_RICE_PAPER, SendChoice.ALL[3].style)       // black ink on rice paper comes right after the two plain ones
+        assertEquals(0xFF1B1B1B.toInt(), ImageStyle.INK_ON_RICE_PAPER.foreground)
+        assertFalse(ImageStyle.INK_ON_RICE_PAPER.isGradient)
         assertTrue(SendChoice.ALL.drop(1).all { it.format == SendFormat.IMAGE })
         assertEquals(0xFF000000.toInt(), ImageStyle.BLACK_ON_WHITE.foreground)
         assertEquals(0xFFFFFFFF.toInt(), ImageStyle.BLACK_ON_WHITE.background)

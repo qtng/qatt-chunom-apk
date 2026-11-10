@@ -238,6 +238,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private fun longLabel(c: SendChoice) = ime.getString(if (c.format == SendFormat.TEXT) R.string.compose_format_text else when (c.style) {
         ImageStyle.BLACK_ON_WHITE -> R.string.compose_format_image_bw
         ImageStyle.WHITE_ON_BLACK -> R.string.compose_format_image_wb
+        ImageStyle.INK_ON_RICE_PAPER -> R.string.compose_style_ink_on_rice_paper
         ImageStyle.GOLD_ON_DARK -> R.string.compose_style_gold_on_dark
         ImageStyle.RED_ON_CREAM -> R.string.compose_style_red_on_cream
         ImageStyle.PINK_GRADIENT -> R.string.compose_style_pink_gradient
