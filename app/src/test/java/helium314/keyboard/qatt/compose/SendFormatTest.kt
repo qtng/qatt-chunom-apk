@@ -22,9 +22,9 @@ class SendFormatTest {
     }
 
     @Test fun theChoiceOfTheUserWinsEverywhere() {
-        assertEquals(T, SendFormatPolicy.selected(T, true, true, false))
-        assertEquals(I, SendFormatPolicy.selected(I, false, false, true))
-        assertEquals(I, SendFormatPolicy.selected(null, true, true, true))
+        assertEquals(SendChoice.TEXT, SendFormatPolicy.selected(SendChoice.TEXT, true, true, false))
+        assertEquals(SendChoice.IMAGE, SendFormatPolicy.selected(SendChoice.IMAGE, false, false, true))
+        assertEquals(SendChoice.IMAGE, SendFormatPolicy.selected(null, true, true, true))
     }
 
     @Test fun imageFallsBackToTextWithoutImageSupport() {
@@ -78,34 +78,50 @@ class SendFormatTest {
     @Test fun choicesPerApp() {
         val c = SendFormatChoices()
         assertEquals(null, c["com.whatsapp"])
-        c["com.whatsapp"] = T
-        c["com.example.notes"] = I
-        assertEquals(T, c["com.whatsapp"])
-        assertEquals(I, c["com.example.notes"])
+        c["com.whatsapp"] = SendChoice.TEXT
+        c["com.example.notes"] = SendChoice(I, ImageStyle.WHITE_ON_BLACK)
+        assertEquals(SendChoice.TEXT, c["com.whatsapp"])
+        assertEquals(SendChoice(I, ImageStyle.WHITE_ON_BLACK), c["com.example.notes"])
         assertEquals(null, c["org.telegram.messenger"])           // no choice: the start value decides
         assertEquals(null, c[null])
-        c["com.whatsapp"] = I                                     // changed by the user
-        assertEquals(I, c["com.whatsapp"])
+        c["com.whatsapp"] = SendChoice.IMAGE                      // changed by the user
+        assertEquals(SendChoice(I, ImageStyle.BLACK_ON_WHITE), c["com.whatsapp"])
         c.forget("com.whatsapp")
         assertEquals(null, c["com.whatsapp"])
-        c[""] = T                                                 // no package name: nothing is stored
+        c[""] = SendChoice.TEXT                                   // no package name: nothing is stored
         assertEquals(1, c.size)
         // the same after a round trip through the settings
         val d = SendFormatChoices.deserialize(c.serialize())
-        assertEquals(I, d["com.example.notes"])
+        assertEquals(SendChoice(I, ImageStyle.WHITE_ON_BLACK), d["com.example.notes"])
         assertEquals(1, d.size)
         assertEquals(0, SendFormatChoices.deserialize(null).size)
         assertEquals(0, SendFormatChoices.deserialize("garbage\n=TEXT\npkg=NOPE").size)
+        assertEquals(SendChoice.IMAGE, SendFormatChoices.deserialize("pkg=IMAGE\nother=IMAGE:NOPE")["pkg"])   // an older or unknown style: the default
+        assertEquals(SendChoice.IMAGE, SendFormatChoices.deserialize("other=IMAGE:NOPE")["other"])
         c.clear()
         assertEquals(0, c.size)
     }
 
     @Test fun choicesKeepTheMostRecentApps() {
         val c = SendFormatChoices(limit = 3)
-        for (i in 1..4) c["app$i"] = T
+        for (i in 1..4) c["app$i"] = SendChoice.TEXT
         assertEquals(listOf("app2", "app3", "app4"), c.apps)
-        c["app2"] = I                                             // used again: now the most recent
-        c["app5"] = T
+        c["app2"] = SendChoice.IMAGE                              // used again: now the most recent
+        c["app5"] = SendChoice.TEXT
         assertEquals(listOf("app4", "app2", "app5"), c.apps)
+    }
+
+    @Test fun selectorEntriesAndStyles() {
+        assertEquals(3, SendChoice.ALL.size)
+        assertEquals(SendChoice.TEXT, SendChoice.ALL[0])
+        assertEquals(ImageStyle.BLACK_ON_WHITE, SendChoice.ALL[1].style)
+        assertEquals(ImageStyle.WHITE_ON_BLACK, SendChoice.ALL[2].style)
+        assertEquals(0xFF000000.toInt(), ImageStyle.BLACK_ON_WHITE.foreground)
+        assertEquals(0xFFFFFFFF.toInt(), ImageStyle.BLACK_ON_WHITE.background)
+        assertEquals(ImageStyle.BLACK_ON_WHITE.foreground, ImageStyle.WHITE_ON_BLACK.background)
+        // no choice: the start value in the default style
+        assertEquals(SendChoice(I, ImageStyle.WHITE_ON_BLACK), SendFormatPolicy.selected(null, true, true, true, ImageStyle.WHITE_ON_BLACK))
+        assertEquals(SendChoice.TEXT, SendFormatPolicy.selected(null, false, false, true))
+        assertEquals(SendChoice(I, ImageStyle.WHITE_ON_BLACK), SendFormatPolicy.selected(SendChoice(I, ImageStyle.WHITE_ON_BLACK), false, false, true))
     }
 }
