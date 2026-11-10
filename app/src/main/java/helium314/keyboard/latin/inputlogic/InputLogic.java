@@ -28,6 +28,7 @@ import androidx.annotation.Nullable;
 import helium314.keyboard.compat.AppWorkarounds;
 import helium314.keyboard.event.Event;
 import helium314.keyboard.event.InputTransaction;
+import helium314.keyboard.event.TelexKey;
 import helium314.keyboard.keyboard.Keyboard;
 import helium314.keyboard.keyboard.KeyboardElement;
 import helium314.keyboard.keyboard.KeyboardLayoutSet;
@@ -159,6 +160,9 @@ public final class InputLogic {
      * @param combiningSpec the combining spec string for this subtype (from extra value)
      * @param settingsValues the current settings values
      */
+    // Vietnamese Telex: a key is applied to the text of the composing word (TelexKey), there is no combiner and no list of raw keys
+    private boolean mTelex = false;
+
     public void startInput(String combiningSpec, SettingsValues settingsValues) {
         mConnection.onStartInput();
         if (!mWordComposer.getTypedWord().isEmpty()) {
@@ -168,6 +172,7 @@ public final class InputLogic {
             StatsUtils.onWordCommitUserTyped(mWordComposer.getTypedWord(), mWordComposer.isBatchMode());
         }
         mWordComposer.restartCombining(combiningSpec);
+        mTelex = "telex".equals(combiningSpec);
         resetComposingState(true /* alsoResetLastComposedWord */);
         mDeleteCount = 0;
         mSpaceState = SpaceState.NONE;
@@ -1000,6 +1005,14 @@ public final class InputLogic {
      * @param settingsValues The current settings values.
      * @param inputTransaction The transaction in progress.
      */
+    /** The composing word after the Telex key of [event], or null if the key is typed as it is. */
+    private String applyTelex(final Event event) {
+        if (event.isFunctionalKeyEvent() || event.getMetaState() != 0 || !Character.isLetter(event.getCodePoint())) return null;
+        final String word = mWordComposer.getTypedWord();
+        if (word.isEmpty()) return null;
+        return TelexKey.INSTANCE.key(word, new String(Character.toChars(event.getCodePoint())));
+    }
+
     private void handleNonSeparatorEvent(final Event event, final SettingsValues settingsValues,
             final InputTransaction inputTransaction) {
         final int codePoint = event.getCodePoint();
@@ -1088,7 +1101,14 @@ public final class InputLogic {
         enterInlineEmojiSearchIfNeeded(codePoint, settingsValues);
 
         if (isComposingWord) {
-            mWordComposer.applyProcessedEvent(event);
+            final String telexWord = mTelex ? applyTelex(event) : null;
+            if (telexWord != null) {
+                // the key changed the word (a tone, â, ư, đ …): the composing word becomes the new text
+                final int[] codePoints = StringUtils.toCodePointArray(telexWord);
+                mWordComposer.replaceTypedWord(codePoints, getCoordinatesForCurrentKeyboard(codePoints));
+            } else {
+                mWordComposer.applyProcessedEvent(event);
+            }
             // If it's the first letter, make note of auto-caps state
             if (mWordComposer.isSingleLetter()) {
                 mWordComposer.setCapitalizedModeAtStartComposingTime(inputTransaction.getShiftState());

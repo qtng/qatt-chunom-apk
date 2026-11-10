@@ -319,6 +319,17 @@ public final class WordComposer {
     }
 
     /**
+     * Replaces the composing word by [codePoints] (Telex changed it), keeping what else is known about it (caps mode, resumed).
+     */
+    public void replaceTypedWord(final int[] codePoints, final int[] coordinates) {
+        final boolean resumed = mIsResumed;
+        final CapsMode caps = mCapitalizedMode;
+        setComposingWord(codePoints, coordinates);
+        mIsResumed = resumed;
+        mCapitalizedMode = caps;
+    }
+
+    /**
      * Returns the word as it was typed, without any correction applied.
      * @return the word that was typed so far. Never returns null.
      */

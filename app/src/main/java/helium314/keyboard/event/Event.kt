@@ -76,9 +76,6 @@ class Event private constructor(
 
     val isCombining: Boolean get() = 0 != FLAG_COMBINING and flags
 
-    /** The code point is text that was already there (a word resumed after a cursor move, a batch input word), not a key that was typed now. */
-    val isAlreadyTyped: Boolean get() = 0 != FLAG_ALREADY_TYPED and flags
-
     val isGesture: Boolean get() = EventType.GESTURE == eventType
 
     // Returns whether this is a fake key press from the suggestion strip. This happens with
@@ -141,8 +138,6 @@ class Event private constructor(
         private const val FLAG_CONSUMED = 0x4
         // This event is a combining character, usually a hangul input.
         private const val FLAG_COMBINING = 0x8
-        // This event stands for text that was already there, see isAlreadyTyped.
-        private const val FLAG_ALREADY_TYPED = 0x10
 
         @JvmStatic
         fun createSoftwareKeypressEvent(codePoint: Int, keyCode: Int, metaState: Int, x: Int, y: Int, isKeyRepeat: Boolean) =
@@ -213,7 +208,7 @@ class Event private constructor(
          */
         @JvmStatic
         // TODO: should we have a different type of event for this? After all, it's not a key press.
-        fun createEventForCodePointFromUnknownSource(codePoint: Int) = Event(eventType = EventType.INPUT_KEYPRESS, codePoint = codePoint, flags = FLAG_ALREADY_TYPED)
+        fun createEventForCodePointFromUnknownSource(codePoint: Int) = Event(eventType = EventType.INPUT_KEYPRESS, codePoint = codePoint)
 
         /**
          * Creates an input event with a code point and x, y coordinates. This is typically used when
@@ -226,7 +221,7 @@ class Event private constructor(
         @JvmStatic
         // TODO: should we have a different type of event for this? After all, it's not a key press.
         fun createEventForCodePointFromAlreadyTypedText(codePoint: Int, x: Int, y: Int) =
-            Event(eventType = EventType.INPUT_KEYPRESS, codePoint = codePoint, x = x, y = y, flags = FLAG_ALREADY_TYPED)
+            Event(eventType = EventType.INPUT_KEYPRESS, codePoint = codePoint, x = x, y = y)
 
         /**
          * Creates an input event representing the manual pick of a suggestion.
