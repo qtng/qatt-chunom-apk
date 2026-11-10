@@ -16,6 +16,8 @@ import helium314.keyboard.event.Event
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
 import helium314.keyboard.latin.LatinIME
 import helium314.keyboard.latin.R
+import helium314.keyboard.latin.utils.ToolbarKey
+import helium314.keyboard.latin.utils.addPinnedKey
 import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.qatt.NomDictionary
 import helium314.keyboard.qatt.VietnameseParser
@@ -54,9 +56,22 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private var chatApp = false
     private var acceptsImages = false
     private var ignoreSelectionUntil = 0L
+    private var lastSelStart = -1
+    private var lastSelEnd = -1
+
+    /** The height of the visible panel (0 if hidden): the touchable region of the keyboard window has to include it. */
+    fun panelHeight(): Int = panel?.takeIf { it.isShown }?.height ?: 0
+
+    /** The pencil is pinned to the bar once, for installations that already had a toolbar setting. */
+    private fun pinPencilOnce() {
+        if (prefs.getBoolean(PREF_PINNED_DONE, false)) return
+        prefs.edit { putBoolean(PREF_PINNED_DONE, true) }
+        addPinnedKey(prefs, ToolbarKey.COMPOSE)
+    }
 
     /** The input view is (re)created: the panel is put into its frame, above the bar. */
     fun attach(inputView: View) {
+        pinPencilOnce()
         val frame = inputView.findViewById<ViewGroup>(R.id.main_keyboard_frame) ?: return
         panel?.let { (it.parent as? ViewGroup)?.removeView(it) }
         val p = ComposePanelView(inputView.context, fonts).also { it.listener = this }
@@ -72,14 +87,19 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     fun onStartInput(editorInfo: EditorInfo?, restarting: Boolean) {
         if (!restarting) close()
         packageName = editorInfo?.packageName
+        lastSelStart = editorInfo?.initialSelStart ?: -1; lastSelEnd = editorInfo?.initialSelEnd ?: -1
         chatApp = AndroidSources.isChatOrSocial(ime, editorInfo)
         acceptsImages = AndroidSources.acceptsImages(editorInfo)
         if (active) refresh()
     }
 
     /** The cursor of the app moved. If the user did that (not our own sending) while the field was selected, the keys go to the app again. */
-    fun onAppSelectionChanged() {
-        if (active && selected && System.currentTimeMillis() > ignoreSelectionUntil) deselect()
+    fun onAppSelectionChanged(newSelStart: Int, newSelEnd: Int) {
+        val moved = newSelStart != lastSelStart || newSelEnd != lastSelEnd
+        val known = lastSelStart >= 0
+        lastSelStart = newSelStart; lastSelEnd = newSelEnd
+        // only a real move of the cursor (a tap into the app) counts, not a repeated report (e.g. after the panel changed the size of the window)
+        if (active && selected && known && moved && System.currentTimeMillis() > ignoreSelectionUntil) deselect()
     }
 
     fun toggle() { if (active) close() else open() }
@@ -87,6 +107,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private fun open() {
         active = true
         selected = true
+        ignoreSelectionUntil = System.currentTimeMillis() + 600
         refresh()
     }
 
@@ -98,7 +119,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         refresh()
     }
 
-    private fun select() { selected = true; refresh() }
+    private fun select() { selected = true; ignoreSelectionUntil = System.currentTimeMillis() + 600; refresh() }
     private fun deselect() { selected = false; expanded = false; refresh() }
 
     // ---------- keys ----------
@@ -348,6 +369,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         private const val PREF_PA = "qatt_compose_pa"
         private const val PREF_QATT = "qatt_compose_qatt"
         private const val PREF_SPACE = "qatt_compose_space"
+        private const val PREF_PINNED_DONE = "qatt_compose_pinned_done"
         private const val PREF_USAGE = "qatt_compose_usage"
         private const val PREF_FONT = "qatt_compose_font"
         private const val MAX_USAGE = 1000

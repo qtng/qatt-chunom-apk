@@ -973,7 +973,7 @@ public class LatinIME extends InputMethodService implements
     public void onUpdateSelection(int oldSelStart, int oldSelEnd, int newSelStart, int newSelEnd,
                                   int composingSpanStart, int composingSpanEnd) {
         super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, composingSpanStart, composingSpanEnd);
-        mComposeController.onAppSelectionChanged();
+        mComposeController.onAppSelectionChanged(newSelStart, newSelEnd);
         if (DebugFlags.DEBUG_ENABLED) {
             Log.i(TAG, "onUpdateSelection: oss=" + oldSelStart + ", ose=" + oldSelEnd
                     + ", nss=" + newSelStart + ", nse=" + newSelEnd

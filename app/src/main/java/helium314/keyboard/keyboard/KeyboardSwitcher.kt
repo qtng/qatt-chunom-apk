@@ -225,7 +225,8 @@ class KeyboardSwitcher private constructor() {
         }
         val stripContainer = inputView.stripContainer
         val stripHeight = if (stripContainer.isShown) stripContainer.height else 0
-        var visibleTopY = inputHeight - (if (visibleKeyboardView.isShown) visibleKeyboardView.height else 0) - stripHeight
+        // the composition field (QATT) sits above the bar and is part of the keyboard: its touches must not fall through to the app
+        var visibleTopY = inputHeight - (if (visibleKeyboardView.isShown) visibleKeyboardView.height else 0) - stripHeight - latinIME.composeController.panelHeight()
         if (Settings.getValues().mIsFloatingKeyboard)
             visibleTopY = themeContext.resources.displayMetrics.heightPixels
 

@@ -138,8 +138,9 @@ val defaultToolbarPref by lazy {
             others.joinToString(Separators.ENTRY) { it.name + Separators.KV + false }
 }
 
+// the pencil of the composition field is always shown (also with the toolbar closed)
 val defaultPinnedToolbarPref = entries.filterNot { it == CLOSE_HISTORY }.joinToString(Separators.ENTRY) {
-    it.name + Separators.KV + false
+    it.name + Separators.KV + (it == COMPOSE)
 }
 
 val defaultClipboardToolbarPref by lazy {
