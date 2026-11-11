@@ -38,7 +38,7 @@ object ImageRenderer {
     private const val MAX_LINES = 12
     private const val PAD_H = 2
     private const val PAD_V = 12
-    private const val LINE_GAP = 4f            // pixels between the lines (on top of the line height of the font)
+    private const val LINE_GAP = 4f            // the distance between two lines is the character height (the text size) plus this, in pixels
     private const val FOLDER = "compose"
 
     /** The cells of [text]: a QATT or PA cell with its joiners and tone marks, else one character. */
@@ -85,10 +85,10 @@ object ImageRenderer {
         return lines
     }
 
-    private fun layoutOf(text: CharSequence, size: Float, color: Int, width: Int, align: Layout.Alignment): StaticLayout {
+    private fun layoutOf(text: CharSequence, size: Float, color: Int, width: Int, align: Layout.Alignment, spacing: Float = 1f): StaticLayout {
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = size; this.color = color }
         @Suppress("DEPRECATION")
-        return StaticLayout(text, paint, width, align, 1f, LINE_GAP, false)
+        return StaticLayout(text, paint, width, align, spacing, 0f, false)
     }
 
     private fun widestLine(l: StaticLayout): Float {
@@ -104,7 +104,10 @@ object ImageRenderer {
         val natural = widestLine(layoutOf(styled, BASE_SIZE, style.foreground, 10_000, Layout.Alignment.ALIGN_NORMAL)).coerceAtLeast(1f)
         val size = BASE_SIZE * minOf((TARGET_SIDE - 2 * PAD_H) / natural, MAX_SIZE / BASE_SIZE)
         val blockWidth = ceil(widestLine(layoutOf(styled, size, style.foreground, 10_000, Layout.Alignment.ALIGN_NORMAL))).toInt().coerceAtLeast(1)
-        val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER)
+        // the line height is the character height (the text size) plus LINE_GAP, not the (much higher) line height of the font
+        val probe = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER)
+        val fontLine = (probe.getLineBottom(0) - probe.getLineTop(0)).coerceAtLeast(1)
+        val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER, (size + LINE_GAP) / fontLine)
         val side = blockWidth + 2 * PAD_H                                  // the imaginary square: as wide as the text plus the side padding
         val height = maxOf(side, layout.height + 2 * PAD_V)                // higher only if the block does not fit
         val aspect = ASPECT * Math.pow(ASPECT_STEP.toDouble(), (textLines.size - 1).toDouble()).toFloat()
