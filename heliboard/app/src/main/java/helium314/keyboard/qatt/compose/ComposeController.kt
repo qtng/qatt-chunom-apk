@@ -235,7 +235,11 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
                         if (end != null) { orientation = GradientDrawable.Orientation.LEFT_RIGHT; colors = intArrayOf(c.style.background, end) }
                         else setColor(c.style.background)
                     }
-                } else { row.background = null; row.setTextColor(Settings.getValues().mColors.get(ColorType.KEY_TEXT)) }
+                } else {                                    // Text: the colours of the keyboard (the popup itself may be white)
+                    val theme = Settings.getValues().mColors
+                    row.setBackgroundColor(theme.get(ColorType.KEY_BACKGROUND))
+                    row.setTextColor(theme.get(ColorType.KEY_TEXT))
+                }
                 return row
             }
         })

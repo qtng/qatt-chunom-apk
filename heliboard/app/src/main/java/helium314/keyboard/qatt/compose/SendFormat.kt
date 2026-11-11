@@ -38,8 +38,8 @@ data class SendChoice(val format: SendFormat, val style: ImageStyle = ImageStyle
     companion object {
         val TEXT = SendChoice(SendFormat.TEXT)
         val IMAGE = SendChoice(SendFormat.IMAGE)
-        /** The entries of the dropdown, in this order: an Image in each style, Text last. */
-        val ALL = ImageStyle.values().map { SendChoice(SendFormat.IMAGE, it) } + TEXT
+        /** The entries of the dropdown, in this order: an Image in each style (rice paper, the "classic" one, last), Text last. */
+        val ALL = (ImageStyle.values().filter { it != ImageStyle.INK_ON_RICE_PAPER } + ImageStyle.INK_ON_RICE_PAPER).map { SendChoice(SendFormat.IMAGE, it) } + TEXT
     }
 }
 

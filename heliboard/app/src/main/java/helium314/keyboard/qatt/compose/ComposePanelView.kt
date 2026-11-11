@@ -82,6 +82,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
             gravity = Gravity.CENTER
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             text = toggleLabels[i]
+            setPadding(dp(14), 0, dp(14), 0)
             isClickable = true
             setOnClickListener { listener?.onToggle(i) }
         }
@@ -102,7 +103,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
         candidateRow.gravity = Gravity.CENTER_VERTICAL
         candidateRow.addView(settings, LayoutParams(dp(40), dp(48)))
-        for (t in toggles) toggleRow.addView(t, LayoutParams(0, dp(36), 1f).apply { setMargins(dp(6), 0, dp(6), 0) })
+        for (t in toggles) toggleRow.addView(t, LayoutParams(LayoutParams.WRAP_CONTENT, dp(36)).apply { setMargins(dp(6), 0, dp(6), 0) })
         candidateRow.addView(toggleRow, LayoutParams(0, dp(48), CANDIDATES.toFloat()))
         for (c in cells) candidateRow.addView(c, LayoutParams(0, dp(48), 1f))
         candidateRow.addView(more, LayoutParams(dp(40), dp(48)))
@@ -182,6 +183,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     fun setToggles(pa: Boolean, nom: Boolean, qatt: Boolean) {
         val text = colors.get(ColorType.KEY_TEXT)
         listOf(pa, nom, qatt).forEachIndexed { i, on ->
+            toggles[i].text = (if (on) "✓ " else "✗ ") + toggleLabels[i]
             toggles[i].setTextColor(if (on) text else (text and 0x00FFFFFF) or 0x88000000.toInt())
             toggles[i].background = GradientDrawable().apply {
                 cornerRadius = dp(18).toFloat()
