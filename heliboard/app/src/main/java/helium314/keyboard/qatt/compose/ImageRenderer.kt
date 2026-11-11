@@ -23,7 +23,8 @@ import kotlin.math.ceil
  * Draws the text of the field as an image (the colours of an [ImageStyle]) and gives it a content address for `commitContent`.
  *
  * Normally ([square] false) the text fills the image with the lines that the field shows (its own line breaks and those of the user, no others), [FREE_PAD]
- * pixels around it, centred both ways; the image is at most [FREE_ASPECT] times as wide as it is high (it gets higher if the text alone is wider). An image higher
+ * pixels around it, centred both ways; the image is at most [FREE_ASPECT] times as wide as it is high (it gets higher if the text alone is wider); a text of fewer
+ * than [SHORT_TEXT] characters is at least [SHORT_ASPECT] times as wide (it gets wider). An image higher
  * than [MAX_HEIGHT] is scaled down to it (a very long text gets small instead of an image of a million pixels).
  *
  * Some apps crop such images to a small square (the Claude app; [SQUARE_APPS]); for them ([square] true) the text is set as a block in an imaginary square,
@@ -40,14 +41,16 @@ object ImageRenderer {
     private const val ASPECT_STEP = 0.9f       // every further line: the aspect ratio times this
     private const val MIN_PER_LINE = 6         // characters a line holds when there is one line; every further line adds one
     private const val MAX_LINES = 12
-    private const val PAD_H = 2
+    private const val PAD_H = 12
     private const val PAD_V = 12
     private const val LINE_GAP = 4f            // the distance between two lines is the character height (the text size) plus this, in pixels
     private const val FOLDER = "compose"
 
     private const val FREE_SIZE = 96f          // pixels: the text size of the normal image
     private const val MAX_HEIGHT = 3000       // pixels
-    private const val FREE_PAD = 12
+    private const val FREE_PAD = 16
+    private const val SHORT_TEXT = 10           // a text of fewer characters is at least SHORT_ASPECT : 1
+    private const val SHORT_ASPECT = 2.5f
     private const val FREE_ASPECT = 3f
 
     /** The apps that crop an image to a small square: they get the square layout. More are added when they become known. */
@@ -108,8 +111,10 @@ object ImageRenderer {
         val probe = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER)
         val fontLine = (probe.getLineBottom(0) - probe.getLineTop(0)).coerceAtLeast(1)
         val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER, (size + LINE_GAP) / fontLine)
-        val width = blockWidth + 2 * FREE_PAD
-        val height = maxOf(layout.height + 2 * FREE_PAD, ceil(width / FREE_ASPECT).toInt())
+        val height0 = layout.height + 2 * FREE_PAD
+        val characters = clean.sumOf { line -> Cells.split(line).count { it.isNotBlank() } }
+        val width = maxOf(blockWidth + 2 * FREE_PAD, if (characters < SHORT_TEXT) ceil(height0 * SHORT_ASPECT).toInt() else 0)
+        val height = maxOf(height0, ceil(width / FREE_ASPECT).toInt())
         val scale = minOf(1f, MAX_HEIGHT.toFloat() / height)
         return draw(layout, blockWidth, width, height, style, scale)
     }
