@@ -19,8 +19,10 @@ import kotlin.math.ceil
 
 /** Draws the text of the field as an image (the colours of an [ImageStyle]) and gives it a content address for `commitContent`. */
 object ImageRenderer {
-    private const val TEXT_SIZE = 72f          // pixels: the image is large, the app scales it
-    private const val MAX_WIDTH = 1080
+    private const val TEXT_SIZE = 72f          // pixels
+    // Messenger shows an image from the keyboard at about 30 % of the screen width and scales it down to that: a wide image has tiny text.
+    // So the text is wrapped at a narrow width (about ten Latin letters or five Chinese characters a line) to keep it readable after the scaling.
+    private const val MAX_WIDTH = 520
     private const val PADDING = 40
     private const val FOLDER = "compose"
 
