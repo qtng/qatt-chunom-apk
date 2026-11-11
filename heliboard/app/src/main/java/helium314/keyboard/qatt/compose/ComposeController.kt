@@ -151,6 +151,11 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val f = field
         when {
             event.keyCode == KeyCode.DELETE -> if (f.isEmpty) { swallowRepeats = true; close(); return true } else f.backspace()
+            event.keyCode == KeyCode.ARROW_LEFT -> f.moveLeft()
+            event.keyCode == KeyCode.ARROW_RIGHT -> f.moveRight()
+            event.keyCode == KeyCode.MOVE_START_OF_LINE || event.keyCode == KeyCode.MOVE_START_OF_PAGE -> f.moveToStart()
+            event.keyCode == KeyCode.MOVE_END_OF_LINE || event.keyCode == KeyCode.MOVE_END_OF_PAGE -> f.moveToEnd()
+            event.keyCode == KeyCode.ARROW_UP || event.keyCode == KeyCode.ARROW_DOWN -> {}      // no lines to move between yet; the app must not move
             event.isFunctionalKeyEvent || event.codePoint < 0 -> return false      // Shift, the switches of the keyboard, …
             event.codePoint == '\n'.code -> f.enter()
             event.codePoint == ' '.code -> f.space()
@@ -173,7 +178,10 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     override fun onBack() = close()
 
-    override fun onFieldTapped() = select()
+    override fun onFieldTapped(offset: Int) {
+        field.setCursor(offset)
+        select()
+    }
 
     override fun onCandidate(index: Int) {
         val c = field.pick(index) ?: return
@@ -368,7 +376,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val choice = currentChoice()
         // where the field accepts no images the text is sent: the field looks like Text then, whatever was chosen
         val image = SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE
-        p.setContent(f.text, f.composingStart, image)
+        p.setContent(f.text, f.composingStart, f.cursor, image)
         p.setLook(image, choice.style, selected)
         p.setFormatLabel(ime.getString(if (!image) R.string.compose_format_text else R.string.compose_format_image))
         val all = if (selected) f.allCandidates() else emptyList()

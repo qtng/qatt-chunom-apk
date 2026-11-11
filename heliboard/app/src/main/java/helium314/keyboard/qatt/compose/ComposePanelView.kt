@@ -40,7 +40,8 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     interface Listener {
         fun onBack()
         fun onSend()
-        fun onFieldTapped()
+        /** A tap into the field: [offset] is the place in the text of the field (not in what is shown) */
+        fun onFieldTapped(offset: Int)
         /** [index]: the place in all candidates, also for the grid */
         fun onCandidate(index: Int)
         fun onFormatSelector(anchor: View)
@@ -96,7 +97,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         gridScroll.visibility = GONE
         addView(gridScroll, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
-        field.setOnClickListener { listener?.onFieldTapped() }
+        field.onTap = { shownOffset -> listener?.onFieldTapped(originalOffset(shownOffset)) }
         applyColors()
     }
 
@@ -123,24 +124,51 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         for (c in cells) c.applyColors(theme)
     }
 
+    // what the field shows and what it stands for: in an image the text is set in other lines (spaces and line breaks differ), so the place of the cursor is mapped by
+    // the characters that are not white space: the n-th of them is the same in the text and in what is shown
+    private var originalText = ""
+    private var shownText = ""
+
+    private fun significant(s: CharSequence, upTo: Int): Int { var n = 0; for (i in 0 until upTo.coerceAtMost(s.length)) if (!s[i].isWhitespace()) n++; return n }
+
+    /** The place after the [n]-th character that is not white space; if the place before is white space in the source, behind all of it. */
+    private fun placeAfter(s: String, n: Int, skipSpaceAfter: Boolean): Int {
+        var p = 0
+        if (n > 0) { var c = 0; p = s.length; for (i in s.indices) if (!s[i].isWhitespace() && ++c == n) { p = i + 1; break } }
+        if (skipSpaceAfter) while (p < s.length && s[p].isWhitespace()) p++
+        return p
+    }
+
+    private fun shownOffset(cursor: Int): Int {
+        if (shownText == originalText) return cursor
+        if (cursor >= originalText.length) return shownText.length
+        return placeAfter(shownText, significant(originalText, cursor), cursor > 0 && originalText[cursor - 1].isWhitespace())
+    }
+
+    private fun originalOffset(shown: Int): Int {
+        if (shownText == originalText) return shown
+        if (shown >= shownText.length) return originalText.length
+        return placeAfter(originalText, significant(shownText, shown), shown > 0 && shownText[shown - 1].isWhitespace())
+    }
+
     /**
-     * The text of the field with its fonts; [composingStart] on: the word being typed, underlined. With [image] the field shows the text as the image will set it:
-     * the same lines (at most 5 + L characters a line, see [ImageRenderer.lines]), centred, so that the result can be seen while typing.
+     * The text of the field with its fonts and the [cursor] in it; [composingStart] on: the word being typed (up to the cursor), underlined. With [image] the field shows the
+     * text as the image will set it: the same lines (see [ImageRenderer.lines]), centred, so that the result can be seen while typing.
      */
-    fun setContent(text: String, composingStart: Int, image: Boolean = false) {
+    fun setContent(text: String, composingStart: Int, cursor: Int, image: Boolean = false) {
         // the empty lines after Enter are kept (the image drops them, but the cursor must be seen on the new line)
         val newlines = text.takeLastWhile { it == '\n' || it == ' ' }.count { it == '\n' }
         val shown = if (image) ImageRenderer.lines(text).joinToString("\n") + "\n".repeat(newlines) else text
+        originalText = text
+        shownText = shown
         val styled = fonts.styled(shown)
-        val typed = text.length - composingStart                      // characters of the word being typed
-        if (typed > 0) {
-            var start = shown.length
-            var left = typed
-            while (start > 0 && left > 0) { start--; if (shown[start] != '\n') left-- }
-            styled.setSpan(UnderlineSpan(), start, shown.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val shownCursor = shownOffset(cursor)
+        if (cursor > composingStart) {
+            val start = shownOffset(composingStart).coerceAtMost(shownCursor)
+            if (start < shownCursor) styled.setSpan(UnderlineSpan(), start, shownCursor, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         field.gravity = if (image) Gravity.CENTER else Gravity.CENTER_VERTICAL or Gravity.START
-        field.setStyledText(styled)
+        field.setStyledText(styled, shownCursor)
     }
 
     /** [selected]: the keys type into the field and the candidates are shown. */
@@ -259,16 +287,34 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
             typeface = Typeface.DEFAULT
         }
 
-        fun setStyledText(text: CharSequence) {
+        /** The cursor (a place in the shown text) and a tap into the field (the place that was hit). */
+        private var caret = 0
+        var onTap: ((Int) -> Unit)? = null
+
+        fun setStyledText(text: CharSequence, cursor: Int) {
             setText(text)
+            caret = cursor.coerceIn(0, text.length)
             caretOn = true
-            post { scrollToEnd() }
+            post { scrollToCaret() }
         }
 
-        private fun scrollToEnd() {
+        override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+            if (event.actionMasked == android.view.MotionEvent.ACTION_UP && onTap != null) {
+                performClick()
+                onTap?.invoke(if (layout == null || text.isEmpty()) 0 else getOffsetForPosition(event.x, event.y))
+                return true
+            }
+            return super.onTouchEvent(event) || event.actionMasked == android.view.MotionEvent.ACTION_DOWN
+        }
+
+        override fun performClick(): Boolean { super.performClick(); return true }
+
+        /** Scrolls so that the line with the cursor is seen. */
+        private fun scrollToCaret() {
             val l = layout ?: return
             val visible = height - paddingTop - paddingBottom
-            scrollTo(0, (l.getLineTop(l.lineCount) - visible).coerceAtLeast(0))
+            val bottom = l.getLineBottom(l.getLineForOffset(caret.coerceAtMost(text.length)))
+            scrollTo(0, (bottom - visible).coerceAtLeast(0))
         }
 
         fun setLook(colors: Colors, image: Boolean, style: ImageStyle, selected: Boolean) {
@@ -321,10 +367,11 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
                 top = paddingTop
                 bottom = paddingTop + lineHeight
             } else {
-                val line = l.getLineForOffset(text.length)
+                val at = caret.coerceAtMost(text.length)
+                val line = l.getLineForOffset(at)
                 val r = android.graphics.Rect()
                 getLineBounds(line, r)                       // in the coordinates of the view: includes the padding and the vertical centring
-                x = paddingLeft + l.getPrimaryHorizontal(text.length)
+                x = paddingLeft + l.getPrimaryHorizontal(at)
                 top = r.top
                 bottom = r.bottom
             }

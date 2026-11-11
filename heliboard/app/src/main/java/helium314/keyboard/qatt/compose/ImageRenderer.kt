@@ -41,20 +41,6 @@ object ImageRenderer {
     private const val LINE_GAP = 4f            // the distance between two lines is the character height (the text size) plus this, in pixels
     private const val FOLDER = "compose"
 
-    /** The cells of [text]: a QATT or PA cell with its joiners and tone marks, else one character. */
-    private fun cells(text: String): List<String> {
-        val out = ArrayList<String>()
-        var i = 0
-        while (i < text.length) {
-            val q = QattText.CELL_ANY.find(text, i)?.takeIf { it.range.first == i }?.value?.length ?: 0
-            val p = PaText.CELL_ANY.find(text, i)?.takeIf { it.range.first == i }?.value?.length ?: 0
-            val n = maxOf(q, p, Character.charCount(text.codePointAt(i)))
-            out.add(text.substring(i, i + n))
-            i += n
-        }
-        return out
-    }
-
     /** The lines: at most [perLine] cells each, broken between words where it can be, else inside a long word. */
     fun wrap(text: String, perLine: Int): List<String> {
         val lines = ArrayList<String>()
@@ -62,7 +48,7 @@ object ImageRenderer {
             var line = ArrayList<String>()
             fun flush() { lines.add(line.joinToString("")); line = ArrayList() }
             for (word in paragraph.split(' ').filter { it.isNotEmpty() }) {
-                val w = cells(word)
+                val w = Cells.split(word)
                 if (w.size > perLine) {                      // a long word: start on a new line, then chunks
                     if (line.isNotEmpty()) flush()
                     w.chunked(perLine).forEach { chunk -> line = ArrayList(chunk); flush() }

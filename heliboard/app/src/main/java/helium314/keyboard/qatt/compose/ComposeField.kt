@@ -26,31 +26,66 @@ data class ComposeSettings(
 )
 
 /**
- * The state of the composition field: the text so far, and the word being typed (the Telex keys, shown as Quốc Ngữ). Pure logic, no Android.
- * The cursor is always at the end (moving it is not done yet).
+ * The state of the composition field: the text and the cursor in it (the text is edited at the cursor, as in any text field). Pure logic, no Android.
+ * Telex works on the text itself ([TelexKey]: the key is applied to the word before the cursor), so there is no state besides text and cursor.
  *
- * Candidates for the word being typed, in this order: PA, QATT (each if switched on and the word has a glyph), then Chữ Nôm, [ComposeSettings.slots] in all.
- * A candidate is taken by [pick] only, except that Space can take one (see [SpaceMode]).
+ * The word being typed is the run of Latin letters before the cursor ([word]); if a letter follows the cursor (the cursor is inside a word) there are no candidates.
+ * Candidates for the word, in this order: PA, QATT (each if switched on and the word has a glyph), then Chữ Nôm, [ComposeSettings.slots] in all.
+ * A candidate is taken by [pick] only, except that Space can take one (see [SpaceMode]). QATT and PA cells and surrogate pairs are never split by the cursor.
  */
 class ComposeField(private val parser: VietnameseParser, private val nom: NomDictionary, var settings: ComposeSettings = ComposeSettings()) {
-    private val committed = StringBuilder()
-    private val keys = StringBuilder()
+    private val sb = StringBuilder()
 
-    /** The word being typed as Quốc Ngữ ("" if none). */
-    val word: String get() = TelexKey.word(keys.toString())
+    /** The cursor: an index into [text], always between two cells. */
+    var cursor = 0
+        private set
 
-    /** The text of the field: what is settled, then the word being typed. */
-    val text: String get() = committed.toString() + word
+    /** The text of the field. */
+    val text: String get() = sb.toString()
 
-    /** Where the word being typed starts in [text] (to underline it); equal to its length if there is none. */
-    val composingStart: Int get() = committed.length
+    val isEmpty: Boolean get() = sb.isEmpty()
 
-    val isEmpty: Boolean get() = committed.isEmpty() && keys.isEmpty()
+    /** The word being typed (Quốc Ngữ): the Latin letters before the cursor ("" if none). */
+    val word: String
+        get() {
+            var i = cursor
+            while (i > 0) {
+                val cp = Character.codePointBefore(sb, i)
+                if (!Character.isLetter(cp) || Cells.isGlyph(cp)) break
+                i -= Character.charCount(cp)
+            }
+            return sb.substring(i, cursor)
+        }
 
-    /** A key of the keyboard: a letter goes into the word (Telex), anything else ends the word and is written as it is. */
+    /** Where the word being typed starts in [text] (to underline it); equal to [cursor] if there is none. */
+    val composingStart: Int get() = cursor - word.length
+
+    /** Is the cursor inside a word (a letter follows it)? Then there are no candidates. */
+    private val insideWord: Boolean
+        get() = cursor < sb.length && Character.isLetter(Character.codePointAt(sb, cursor)) && !Cells.isGlyph(Character.codePointAt(sb, cursor))
+
+    private fun insert(s: String) { sb.insert(cursor, s); cursor += s.length }
+
+    private fun replaceWord(with: String) {
+        val start = composingStart
+        sb.replace(start, cursor, with)
+        cursor = start + with.length
+    }
+
+    /** A key of the keyboard: a letter goes into the word (Telex), anything else is written as it is. */
     fun type(codePoint: Int) {
-        if (Character.isLetter(codePoint)) keys.appendCodePoint(codePoint)
-        else { settle(); committed.appendCodePoint(codePoint) }
+        if (Character.isLetter(codePoint) && !Cells.isGlyph(codePoint)) {
+            val key = String(Character.toChars(codePoint))
+            val start = maxOf(0, cursor - WINDOW)
+            val window = sb.substring(start, cursor)
+            val result = TelexKey.key(window, key)
+            if (result != null) {
+                sb.replace(start, cursor, result)
+                cursor = start + result.length
+                return
+            }
+        }
+        insert(String(Character.toChars(codePoint)))
     }
 
     fun type(s: String) {
@@ -58,55 +93,43 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
         while (i < s.length) { val cp = s.codePointAt(i); type(cp); i += Character.charCount(cp) }
     }
 
-    /** The word being typed becomes part of the text, as Quốc Ngữ. */
-    private fun settle() {
-        committed.append(word)
-        keys.setLength(0)
-    }
-
     /** Space: see [SpaceMode]. */
     fun space() {
         val w = word
-        if (w.isNotEmpty()) {
+        if (w.isNotEmpty() && !insideWord) {
             val converted = when (settings.space) {
                 SpaceMode.NONE -> null
                 SpaceMode.PA -> PaText.word(w, parser)
                 SpaceMode.QATT -> QattText.word(w, parser)
                 SpaceMode.NOM -> nom.lookup(w, settings.usage, 1).firstOrNull()?.glyph
             }
-            if (converted != null) {            // the space is swallowed: cells stand side by side
-                committed.append(converted)
-                keys.setLength(0)
-                return
-            }
-            settle()
+            if (converted != null) { replaceWord(converted); return }       // the space is swallowed: cells stand side by side
         }
-        committed.append(' ')
+        insert(" ")
     }
 
-    fun enter() {
-        settle()
-        committed.append('\n')
-    }
+    fun enter() = insert("\n")
 
-    /** Backspace: a key of the word being typed, else a whole cell (QATT and PA cells with their joiners and tone marks) or character. */
+    /** Backspace: a whole cell (QATT and PA cells with their joiners and tone marks) or character before the cursor. */
     fun backspace() {
-        if (keys.isNotEmpty()) {
-            val cp = keys.codePointBefore(keys.length)
-            keys.setLength(keys.length - Character.charCount(cp))
-            return
-        }
-        if (committed.isEmpty()) return
-        val s = committed.toString()
-        val q = QattText.CELL_ANY.findAll(s).lastOrNull()?.range?.first ?: (s.length - 1)
-        val p = PaText.CELL_ANY.findAll(s).lastOrNull()?.range?.first ?: (s.length - 1)
-        committed.setLength(minOf(q, p))
+        if (cursor == 0) return
+        val start = Cells.startBefore(sb, cursor)
+        sb.delete(start, cursor)
+        cursor = start
     }
+
+    fun moveLeft() { if (cursor > 0) cursor = Cells.startBefore(sb, cursor) }
+    fun moveRight() { if (cursor < sb.length) cursor = Cells.endAfter(sb, cursor) }
+    fun moveToStart() { cursor = 0 }
+    fun moveToEnd() { cursor = sb.length }
+
+    /** Puts the cursor at [offset] (a tap), moved to the nearest border between two cells. */
+    fun setCursor(offset: Int) { cursor = Cells.snap(sb, offset.coerceIn(0, sb.length)) }
 
     /** All candidates for the word being typed: PA, QATT (each if switched on and the word has a glyph), then Chữ Nôm (at most [MAX_NOM]). */
     fun allCandidates(): List<Candidate> {
         val w = word
-        if (w.isEmpty()) return emptyList()
+        if (w.isEmpty() || insideWord) return emptyList()
         val out = LinkedHashMap<String, Candidate>()
         fun add(c: Candidate) { if (c.text.isNotEmpty() && c.text !in out) out[c.text] = c }
         if (settings.pa) PaText.word(w, parser)?.let { add(Candidate(Kind.PA, it)) }
@@ -124,19 +147,20 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
     /** A tap on candidate [index] of [allCandidates] (the bar shows the first ones): it replaces the word being typed. Returns it (null if there is none at that place). */
     fun pick(index: Int): Candidate? {
         val c = allCandidates().getOrNull(index) ?: return null
-        committed.append(c.text)
-        keys.setLength(0)
+        replaceWord(c.text)
         return c
     }
 
     companion object {
         /** At most this many Chữ Nôm candidates. */
         const val MAX_NOM = 60
+        /** Telex looks at this many characters before the cursor (a word is at most seven letters). */
+        const val WINDOW = 30
     }
 
     /** Removes everything (the arrow to the left, or after sending). */
     fun clear() {
-        committed.setLength(0)
-        keys.setLength(0)
+        sb.setLength(0)
+        cursor = 0
     }
 }

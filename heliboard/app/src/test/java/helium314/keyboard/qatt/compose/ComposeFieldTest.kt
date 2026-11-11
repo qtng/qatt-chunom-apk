@@ -123,11 +123,11 @@ class ComposeFieldTest {
         assertEquals("xin\nchào.a", f.text)
     }
 
-    @Test fun backspaceDeletesKeysThenWholeCells() {
+    @Test fun backspaceDeletesCharactersThenWholeCells() {
         val f = field(ComposeSettings(space = SpaceMode.QATT))
         f.type("tuwj"); f.backspace()
-        assertEquals("tư", f.word)
-        f.backspace(); f.backspace(); f.backspace()
+        assertEquals("t", f.word)
+        f.backspace()
         assertTrue(f.isEmpty)
         f.type("tuwj"); f.space()
         val cell = f.text
@@ -153,5 +153,114 @@ class ComposeFieldTest {
         f.clear()
         assertTrue(f.isEmpty)
         assertEquals("", f.text)
+    }
+
+    // ---------- the cursor ----------
+
+    @Test fun typingAtTheCursor() {
+        val f = field()
+        f.type("xin"); f.space(); f.type("chaof")
+        assertEquals(8, f.cursor)
+        f.moveLeft(); f.moveLeft(); f.moveLeft(); f.moveLeft(); f.moveLeft()            // behind "xin"
+        assertEquals(3, f.cursor)
+        f.type("h")                                                                      // "xinh chào"
+        assertEquals("xinh chào", f.text)
+        assertEquals(4, f.cursor)
+        f.moveToEnd()
+        assertEquals(9, f.cursor)
+        f.moveRight()                                                                    // nothing to the right
+        assertEquals(9, f.cursor)
+        f.moveToStart(); f.moveLeft()
+        assertEquals(0, f.cursor)
+        f.type("a")
+        assertEquals("axinh chào", f.text)
+    }
+
+    @Test fun telexWorksAtTheCursor() {
+        val f = field()
+        f.type("xin"); f.type(" "); f.type("chao")
+        for (i in 0 until 5) f.moveLeft()                                                // behind "xin"
+        assertEquals(3, f.cursor)
+        f.type("f")                                                                      // the tone goes to the word before the cursor
+        assertEquals("xìn chao", f.text)
+        assertEquals(3, f.cursor)
+    }
+
+    @Test fun backspaceAtTheCursorDeletesBeforeIt() {
+        val f = field()
+        f.type("xin chao")
+        f.moveLeft(); f.moveLeft()                                                       // between "h" and "a"
+        f.backspace()
+        assertEquals("xin cao", f.text)
+        assertEquals(5, f.cursor)
+        f.moveToStart(); f.backspace()                                                   // nothing before the cursor
+        assertEquals("xin cao", f.text)
+    }
+
+    @Test fun noCandidatesInsideAWordButAfterIt() {
+        val f = field()
+        f.type("nguwowif")
+        assertTrue(f.candidates().isNotEmpty())
+        f.moveLeft()                                                                     // inside the word: a letter follows
+        assertTrue(f.candidates().isEmpty())
+        f.moveRight()
+        assertTrue(f.candidates().isNotEmpty())
+        f.type(" "); f.moveLeft()                                                        // behind the word, a space follows: candidates again
+        assertEquals("người", f.word)
+        assertTrue(f.candidates().isNotEmpty())
+    }
+
+    @Test fun pickReplacesTheWordBeforeTheCursorOnly() {
+        val f = field()
+        f.type("tuwj"); f.type(" "); f.type("xin")
+        f.moveToStart(); f.moveRight(); f.moveRight()                                    // behind "tự"? the cells are single characters
+        assertEquals(2, f.cursor)
+        assertEquals("tự", f.word)
+        val first = assertNotNull(f.pick(0))
+        assertEquals(first.text + " xin", f.text)
+        assertEquals(first.text.length, f.cursor)
+    }
+
+    @Test fun cellsAreNotSplitByTheCursor() {
+        val f = field(ComposeSettings(space = SpaceMode.QATT))
+        f.type("tuwj"); f.space(); f.type("a"); f.space()
+        val all = f.text
+        val cell1 = QattText.word("tự", parser)!!
+        assertTrue(all.startsWith(cell1))
+        f.moveToStart()
+        f.moveRight()                                                                    // behind the whole first cell
+        assertEquals(cell1.length, f.cursor)
+        f.moveLeft()
+        assertEquals(0, f.cursor)
+        f.setCursor(1)                                                                   // inside the first cell: to the nearest border
+        assertTrue(f.cursor == 0 || f.cursor == cell1.length)
+        f.setCursor(cell1.length)
+        f.backspace()                                                                    // the whole cell before the cursor
+        assertEquals(all.substring(cell1.length), f.text)
+        assertEquals(0, f.cursor)
+    }
+
+    @Test fun setCursorClampsAndClearResets() {
+        val f = field()
+        f.type("xin")
+        f.setCursor(99)
+        assertEquals(3, f.cursor)
+        f.setCursor(-5)
+        assertEquals(0, f.cursor)
+        f.setCursor(2)
+        f.clear()
+        assertEquals(0, f.cursor)
+        assertTrue(f.isEmpty)
+    }
+
+    @Test fun spaceConvertsTheWordBeforeTheCursorInTheMiddle() {
+        val f = field(ComposeSettings(space = SpaceMode.NOM))
+        f.type("xin"); f.type(" "); f.type("chaof")
+        for (i in 0 until 5) f.moveLeft()                                                // behind "xin"
+        assertEquals(3, f.cursor)
+        f.space()
+        val glyph = nom.lookup("xin").first().glyph
+        assertEquals(glyph + " chào", f.text)
+        assertEquals(glyph.length, f.cursor)
     }
 }
