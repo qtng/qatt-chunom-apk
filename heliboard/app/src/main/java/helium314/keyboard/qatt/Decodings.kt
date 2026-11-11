@@ -5,7 +5,7 @@ package helium314.keyboard.qatt
 
 /** The rhyme tables of the known decodings: DECODINGS[name][row][column] (row i = shape SHAPES[i], column + 2 = marking stroke, a sixth column is the plain shape). */
 internal val DECODINGS: Map<String, List<List<String>>> = mapOf(
-    "qatt" to listOf(
+    "qode" to listOf(
         listOf("ơ", "ơnh", "ơn", "ơi", "ơm"),
         listOf("uơ", "uơnh", "uơn", "uơi", "ôm"),
         listOf("a", "ang", "an", "ai", "am"),
@@ -29,31 +29,7 @@ internal val DECODINGS: Map<String, List<List<String>>> = mapOf(
         listOf("o", "on", "oi", "iêu", "êu"),
         listOf("ua", "uôn", "uôi", "iu", "uyu")
     ),
-    "qoex" to listOf(
-        listOf("", "anh", "ơn", "ơi", "ơm", "ơ"),
-        listOf("", "oanh", "uơn", "uơi", "", "uơ"),
-        listOf("", "ang", "an", "ai", "am", "a"),
-        listOf("", "oang", "oan", "oai", "oam", "oa"),
-        listOf("", "eng", "en", "", "em", "e"),
-        listOf("", "oeng", "oen", "", "", "oe"),
-        listOf("ưu", "ưng", "ưi", "ưn", "ưm", "ư"),
-        listOf("ươu", "ương", "ươi", "ươn", "ươm", "ươ"),
-        listOf("âu", "âng", "ây", "ân", "âm", "â"),
-        listOf("uâu", "uâng", "uây", "uân", "", "uâ"),
-        listOf("au", "ăng", "ay", "ăn", "ăm", "ă"),
-        listOf("oau", "oăng", "oay", "oăn", "oăm", "oă"),
-        listOf("", "iêng", "", "iên", "iêm", "iê"),
-        listOf("", "", "", "uyên", "", "uyê"),
-        listOf("", "ênh", "ê", "ên", "êm", "ê"),
-        listOf("", "uênh", "uê", "uên", "uêm", "uê"),
-        listOf("", "inh", "i", "in", "im", "i"),
-        listOf("", "uynh", "uy", "uyn", "uym", "uy"),
-        listOf("", "ôn", "ôi", "ao", "oao", "ô"),
-        listOf("", "un", "ui", "eo", "oeo", "u"),
-        listOf("", "on", "oi", "iêu", "êu", "o"),
-        listOf("", "uôn", "uôi", "iu", "uyu", "uô")
-    ),
-    "qoex2" to listOf(
+    "qatt" to listOf(
         listOf("ơ", "anh", "ơn", "ơi", "ơm", ""),
         listOf("uơ", "oanh", "uơn", "uơi", "", ""),
         listOf("a", "ang", "an", "ai", "am", "ao"),
@@ -66,16 +42,16 @@ internal val DECODINGS: Map<String, List<List<String>>> = mapOf(
         listOf("", "uâng", "uây", "uân", "", "uâu"),
         listOf("", "ăng", "ay", "ăn", "ăm", "au"),
         listOf("", "oăng", "oay", "oăn", "oăm", "oau"),
-        listOf("", "iêng", "iê", "iên", "iêm", "iêu"),
-        listOf("", "", "uyê", "uyên", "", ""),
         listOf("", "ênh", "ê", "ên", "êm", "êu"),
         listOf("", "uênh", "uê", "uên", "uêm", "uêu"),
+        listOf("", "iêng", "iê", "iên", "iêm", "iêu"),
+        listOf("", "", "uyê", "uyên", "", ""),
         listOf("", "inh", "i", "in", "im", "iu"),
         listOf("", "uynh", "uy", "uyn", "uym", "uyu"),
-        listOf("ô", "ôn", "ôi", "", "", "ôm"),
-        listOf("u", "un", "ui", "", "", "um"),
-        listOf("o", "on", "oi", "", "", "om"),
-        listOf("ua", "uôn", "uôi", "", "", "uôm")
+        listOf("ô", "ôn", "ôi", "", "ôm", ""),
+        listOf("u", "un", "ui", "", "um", ""),
+        listOf("o", "on", "oi", "", "om", ""),
+        listOf("ua", "uôn", "uôi", "", "uôm", "")
     ),
     "omniglot" to listOf(
         listOf("ê", "ênh", "ơn", "uơ", "um"),

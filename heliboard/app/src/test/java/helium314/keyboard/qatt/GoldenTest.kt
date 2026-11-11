@@ -11,9 +11,10 @@ import kotlin.test.fail
  * (node tools/golden/make_golden.mjs) and must be reproduced exactly. "-" in a file is null, "." the empty string, characters are lists of hex code points.
  */
 class GoldenTest {
-    private val names = listOf("qatt", "qoex", "qoex2", "omniglot")
+    // in the order of VietnameseParser.DECODINGS of parser.js (the columns of the golden files); qatt is the qatt.org style guide, qode the decoding qatt.org
+    private val names = listOf("qode", "qatt", "omniglot")
     private val parsers = names.map { VietnameseParser(it) }
-    private val p = parsers[0]
+    private val p = parsers[names.indexOf("qatt")]
 
     private fun lines(name: String): List<String> {
         val stream = javaClass.getResourceAsStream("/golden/$name") ?: fail("missing resource golden/$name (run tools/golden/make_golden.mjs)")
@@ -38,6 +39,8 @@ class GoldenTest {
         assertTrue(bad == 0, "$what: $bad of ${rows.size} rows differ$shown")
     }
 
+    private val pa0 = 10 + names.size   // the PA columns follow the readings of every decoding
+
     @Test fun words() {
         val rows = lines("words.tsv.gz").map { line ->
             val c = line.split("\t")
@@ -53,8 +56,8 @@ class GoldenTest {
                         c[1] to s(r.code), c[2] to s(r.qatt), c[3] to s(r.hop), c[4] to s(r.onset), c[5] to s(r.glide), c[6] to s(r.vowel), c[7] to s(r.coda), c[8] to r.tone,
                         c[9] to cps(qatt),
                     ) + parsers.mapIndexed { i, q -> c[10 + i] to (if (qatt == null) "-" else s(QattText.reading(qatt, q))) } + listOf(
-                        c[14] to cps(pa), c[15] to cps(PaText.word(w, p, PaText.Options(stacked = false))), c[16] to cps(PaText.word(w, p, PaText.Options(ngang = true))),
-                        c[17] to s(PaText.read(pa ?: "", p)),
+                        c[pa0] to cps(pa), c[pa0 + 1] to cps(PaText.word(w, p, PaText.Options(stacked = false))), c[pa0 + 2] to cps(PaText.word(w, p, PaText.Options(ngang = true))),
+                        c[pa0 + 3] to s(PaText.read(pa ?: "", p)),
                     )
                 }
             }
@@ -78,7 +81,7 @@ class GoldenTest {
     }
 
     @Test fun misc() {
-        val omni = parsers[3]
+        val omni = parsers[names.indexOf("omniglot")]
         val all = lines("misc.tsv.gz")
         val rows = all.map { line ->
             val c = line.split("\t")

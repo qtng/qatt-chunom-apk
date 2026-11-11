@@ -24,7 +24,7 @@ private fun nfc(s: String) = Normalizer.normalize(s, Normalizer.Form.NFC)
 
 /** Port of `VietnameseParser` of js/parser.js (qtng/qatt): same steps, same results (tests: golden files made from the JavaScript). */
 class VietnameseParser(table: List<List<String>>, val decoding: String = "") {
-    /** [decoding]: the name of a table of [DECODINGS] (qatt, qoex, qoex2, omniglot). */
+    /** [decoding]: the name of a table of [DECODINGS]: qatt (the qatt.org style guide, the writing standard), qode (the decoding qatt.org), omniglot. */
     constructor(decoding: String = "qatt") : this(DECODINGS[decoding] ?: throw IllegalArgumentException("Unknown decoding: $decoding"), decoding)
 
     private val onsets = ONSETS.map { nfd(it).lowercase() }
