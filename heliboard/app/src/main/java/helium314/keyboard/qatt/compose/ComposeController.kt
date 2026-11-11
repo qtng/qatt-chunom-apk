@@ -201,6 +201,16 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         refresh()
     }
 
+    /**
+     * Switches the scripts: at least one is always on (if the user switched all off, Chữ Nôm comes back), and Space always converts to a script that is on
+     * (if its script went off, it follows the rule below).
+     */
+    private fun saveScripts(s: ComposeSettings, pa: Boolean, qatt: Boolean, nom: Boolean) {
+        val nomOn = nom || (!pa && !qatt)
+        val spaceOk = when (s.space) { SpaceMode.PA -> pa; SpaceMode.QATT -> qatt; SpaceMode.NOM -> nomOn; SpaceMode.NONE -> false }
+        saveSettings(s.copy(pa = pa, qatt = qatt, nom = nomOn, space = if (spaceOk) s.space else spaceModeFor(pa, qatt, nomOn)))
+    }
+
     /** What Space does after the setup: Chữ Nôm if it is on; else the one script that is on; else (PA and QATT) PA. */
     private fun spaceModeFor(pa: Boolean, qatt: Boolean, nom: Boolean) = when {
         nom -> SpaceMode.NOM
@@ -303,10 +313,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         menu.menu.add(Menu.NONE, 1, 1, R.string.compose_pa_candidates).apply { isCheckable = true; isChecked = s.pa }
         menu.menu.add(Menu.NONE, 2, 2, R.string.compose_qatt_candidates).apply { isCheckable = true; isChecked = s.qatt }
         menu.menu.add(Menu.NONE, 3, 3, R.string.compose_nom_candidates).apply { isCheckable = true; isChecked = s.nom }
-        val modes = listOf(
-            SpaceMode.NONE to R.string.compose_space_none, SpaceMode.PA to R.string.compose_space_pa,
-            SpaceMode.QATT to R.string.compose_space_qatt, SpaceMode.NOM to R.string.compose_space_nom,
-        )
+        val modes = listOf(SpaceMode.PA to R.string.compose_space_pa, SpaceMode.QATT to R.string.compose_space_qatt, SpaceMode.NOM to R.string.compose_space_nom)
         modes.forEachIndexed { i, (mode, label) -> menu.menu.add(1, 10 + i, 10 + i, label).apply { isCheckable = true; isChecked = s.space == mode } }
         menu.menu.setGroupCheckable(1, true, true)
         ComposeFont.values().forEachIndexed { i, font ->
@@ -316,18 +323,16 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         menu.menu.add(Menu.NONE, 22, 22, ime.getString(R.string.compose_update_font, fonts.family.label, fonts.family.sizeMb, fontState(fonts.family)))
         menu.menu.add(Menu.NONE, 24, 24, R.string.compose_import_font)
         if (FontStore.imported(ime, ComposeFont.PEN) != null) menu.menu.add(Menu.NONE, 23, 23, R.string.compose_font_builtin)
-        menu.menu.add(Menu.NONE, 20, 20, R.string.compose_forget_choices)
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                1 -> saveSettings(s.copy(pa = !s.pa))
-                2 -> saveSettings(s.copy(qatt = !s.qatt))
-                3 -> saveSettings(s.copy(nom = !s.nom))
-                in 10..13 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
+                1 -> saveScripts(s, !s.pa, s.qatt, s.nom)
+                2 -> saveScripts(s, s.pa, !s.qatt, s.nom)
+                3 -> saveScripts(s, s.pa, s.qatt, !s.nom)
+                in 10..12 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
                 in 30..32 -> chooseFont(ComposeFont.values()[item.itemId - 30])
                 22 -> updateFont(fonts.family)
                 24 -> launchImport(fonts.family)
                 23 -> { FontStore.remove(ime, ComposeFont.PEN); updater.forgetEtag(ComposeFont.PEN); fonts.family = ComposeFont.PEN; prefs.edit { putString(PREF_FONT, ComposeFont.PEN.name) } }
-                20 -> { choices.clear(); prefs.edit { putString(PREF_CHOICES, "") } }
             }
             refresh()
             true
@@ -415,6 +420,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         p.setContent(f.text, f.composingStart, f.cursor, image)
         p.setLook(image, choice.style, selected)
         p.setFormatLabel(ime.getString(if (!image) R.string.compose_format_text else R.string.compose_format_image))
+        p.setSendReady(f.text.isNotBlank())
         val all = if (selected) f.allCandidates() else emptyList()
         val places = f.settings.slots
         val more = all.size > places
@@ -443,7 +449,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         pa = prefs.getBoolean(PREF_PA, true),
         qatt = prefs.getBoolean(PREF_QATT, false),   // default: PA and Chữ Nôm, Space converts to Chữ Nôm
         nom = prefs.getBoolean(PREF_NOM, true),
-        space = SpaceMode.values().firstOrNull { it.name == prefs.getString(PREF_SPACE, "") } ?: SpaceMode.NOM,
+        space = SpaceMode.values().firstOrNull { it.name == prefs.getString(PREF_SPACE, "") } ?.takeIf { it != SpaceMode.NONE } ?: SpaceMode.NOM,
         usage = usage,
     )
 

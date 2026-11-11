@@ -89,7 +89,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         top.addView(settings, LayoutParams(dp(44), dp(44)))
         top.addView(field, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(dp(2), dp(4), dp(2), dp(4)) })
         top.addView(format, LayoutParams(LayoutParams.WRAP_CONTENT, dp(40)).apply { setMargins(dp(2), 0, dp(2), 0) })
-        top.addView(send, LayoutParams(dp(44), dp(44)))
+        top.addView(send, LayoutParams(dp(40), dp(40)).apply { setMargins(dp(4), 0, dp(4), 0) })
         addView(top, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
         candidateRow.gravity = Gravity.CENTER_VERTICAL
@@ -109,6 +109,21 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         applyColors()
     }
 
+    private var sendReady = false
+
+    /** The send button is a round button, grey while the field is empty and coloured (as the one of the Claude app) as soon as there is text. */
+    fun setSendReady(ready: Boolean) { if (ready != sendReady) { sendReady = ready; styleSend() } }
+
+    private fun styleSend() {
+        val theme = colors
+        send.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(if (sendReady) 0xFFC96442.toInt() else (theme.get(ColorType.KEY_TEXT) and 0x00FFFFFF) or 0x22000000)
+        }
+        send.setColorFilter(if (sendReady) 0xFFFFFFFF.toInt() else (theme.get(ColorType.KEY_TEXT) and 0x00FFFFFF) or 0x66000000)
+        send.isEnabled = sendReady
+    }
+
     private fun iconButton(icon: Int, description: String, onClick: () -> Unit) = ImageButton(context, null, R.attr.suggestionWordStyle).apply {
         scaleType = ImageView.ScaleType.CENTER
         setImageResource(icon)
@@ -122,8 +137,9 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     fun applyColors() {
         val theme = colors
         theme.setBackground(this, ColorType.STRIP_BACKGROUND)
-        for (b in listOf(back, send, settings, more)) { theme.setColor(b, ColorType.TOOL_BAR_KEY); theme.setBackground(b, ColorType.STRIP_BACKGROUND) }
+        for (b in listOf(back, settings, more)) { theme.setColor(b, ColorType.TOOL_BAR_KEY); theme.setBackground(b, ColorType.STRIP_BACKGROUND) }
         format.setTextColor(theme.get(ColorType.KEY_TEXT))
+        styleSend()
         val keyBackground = theme.get(ColorType.KEY_BACKGROUND)
         format.background = GradientDrawable().apply {
             cornerRadius = dp(16).toFloat()
