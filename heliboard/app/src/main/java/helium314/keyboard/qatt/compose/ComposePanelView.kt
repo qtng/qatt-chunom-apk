@@ -127,7 +127,9 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
      * the same lines (at most 5 + L characters a line, see [ImageRenderer.lines]), centred, so that the result can be seen while typing.
      */
     fun setContent(text: String, composingStart: Int, image: Boolean = false) {
-        val shown = if (image) ImageRenderer.lines(text).joinToString("\n") else text
+        // the empty lines after Enter are kept (the image drops them, but the cursor must be seen on the new line)
+        val newlines = text.takeLastWhile { it == '\n' || it == ' ' }.count { it == '\n' }
+        val shown = if (image) ImageRenderer.lines(text).joinToString("\n") + "\n".repeat(newlines) else text
         val styled = fonts.styled(shown)
         val typed = text.length - composingStart                      // characters of the word being typed
         if (typed > 0) {
@@ -287,7 +289,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
             setTextColor(fg)
             setHintTextColor((fg and 0x00FFFFFF) or 0x66000000)
             caretColor = fg
-            blinking = !image && selected
+            blinking = selected
             caretOn = true
             removeCallbacks(blink)
             if (blinking) postDelayed(blink, 530)
@@ -319,9 +321,11 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
                 bottom = paddingTop + lineHeight
             } else {
                 val line = l.getLineForOffset(text.length)
+                val r = android.graphics.Rect()
+                getLineBounds(line, r)                       // in the coordinates of the view: includes the padding and the vertical centring
                 x = paddingLeft + l.getPrimaryHorizontal(text.length)
-                top = paddingTop + l.getLineTop(line)
-                bottom = paddingTop + l.getLineBottom(line)
+                top = r.top
+                bottom = r.bottom
             }
             caretPaint.color = if (blinking) caretColor else (caretColor and 0x00FFFFFF) or 0x66000000   // steady and pale in Image
             canvas.drawRect(x, top.toFloat(), x + 2 * dp, bottom.toFloat(), caretPaint)
