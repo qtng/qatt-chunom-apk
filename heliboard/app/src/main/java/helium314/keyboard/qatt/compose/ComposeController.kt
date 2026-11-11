@@ -401,7 +401,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         ImageStyle.WHITE_ON_BLACK -> R.string.compose_format_image_wb
         ImageStyle.INK_ON_RICE_PAPER -> R.string.compose_style_ink_on_rice_paper
         ImageStyle.GOLD_ON_DARK -> R.string.compose_style_gold_on_dark
-        ImageStyle.RED_ON_CREAM -> R.string.compose_style_red_on_cream
+        ImageStyle.MOSS_GRADIENT -> R.string.compose_style_moss_gradient
         ImageStyle.PINK_GRADIENT -> R.string.compose_style_pink_gradient
         ImageStyle.SUNSET_GRADIENT -> R.string.compose_style_sunset_gradient
         ImageStyle.OCEAN_GRADIENT -> R.string.compose_style_ocean_gradient

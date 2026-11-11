@@ -13,7 +13,7 @@ enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEn
     WHITE_ON_BLACK(0xFFFFFFFF.toInt(), 0xFF000000.toInt()),
     INK_ON_RICE_PAPER(0xFF1B1B1B.toInt(), 0xFFF3EAD3.toInt()),       // black ink on the colour of rice paper: the classic Asian look
     GOLD_ON_DARK(0xFFE8BD55.toInt(), 0xFF16181F.toInt()),
-    RED_ON_CREAM(0xFFB3261E.toInt(), 0xFFF8F0DC.toInt()),
+    MOSS_GRADIENT(0xFFFFFFFF.toInt(), 0xFF7E9A4E.toInt(), 0xFF2F4A24.toInt()),   // "Moss garden": it took the place of RED_ON_CREAM (Cinnabar), see SendFormatChoices
     PINK_GRADIENT(0xFFFFFFFF.toInt(), 0xFFEC6FA6.toInt(), 0xFFB0245E.toInt()),
     SUNSET_GRADIENT(0xFFFFFFFF.toInt(), 0xFFF2994A.toInt(), 0xFF6A3093.toInt()),
     OCEAN_GRADIENT(0xFFFFFFFF.toInt(), 0xFF1FA2A6.toInt(), 0xFF1F4E9C.toInt());
