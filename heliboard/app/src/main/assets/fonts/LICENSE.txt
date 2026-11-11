@@ -1,0 +1,48 @@
+Fonts of qatt.org
+Copyright (c) 2026 qatt.org. All rights reserved.
+
+This licence covers
+  - the QATT fonts of qatt.org (the files in this folder, .ttf and .woff2);
+  - the CJK fonts of chunom.org: QATT Pen (Thin, Light, Regular, Medium),
+    Migoi, Celluloid and Phong Thao (the .ttf files offered for download and
+    the web files cut from them);
+and the glyph data and tools they are built from. They are not free software
+and not open source.
+
+What is in the fonts
+  - The QATT letters (U+F0000-U+F00A3) are designed and drawn by qatt.org.
+  - All other characters (Han characters and Chu Nom,
+    Latin with Quoc Ngu, punctuation) are drawn by qatt.org with its own
+    stroke designs on the stroke skeletons of GlyphWiki
+    (https://glyphwiki.org/), used under the terms of GlyphWiki. This licence
+    covers the work of qatt.org; it does not restrict the GlyphWiki data
+    itself, which stays available under its own terms.
+
+You may
+  - download the fonts from qatt.org and chunom.org and install them on your
+    own devices;
+  - use them to read, write and print text in the scripts they contain
+    (QATT, Chu Nom, Han characters, Quoc Ngu and the others), for yourself
+    and for others;
+  - embed them, as subsets, in documents such as PDF files so that the text
+    shows as written;
+  - use them on web pages by loading them from qatt.org or chunom.org as
+    described at https://chunom.org/chunom/fonts/ (section "For websites"),
+    so that the text of the pages shows in them (loading from there is not
+    hosting; copying the font files to your own server still needs written
+    permission).
+Text and images that you set with the fonts belong to you.
+
+You may not, without written permission of qatt.org,
+  - modify, convert, adapt or extend the fonts or the glyph data, or take
+    glyphs or outlines out of them;
+  - use the fonts, their glyphs or the glyph data as the basis of other
+    fonts, glyph sets, drawings or other derived works;
+  - copy, redistribute, publish, host, sell or sublicense the fonts or the
+    glyph data.
+
+The fonts are provided "as is", without warranty of any kind. In no event
+shall qatt.org be liable for any claim, damages or other liability arising
+from the use of the fonts.
+
+Permission for other uses: https://qatt.org
