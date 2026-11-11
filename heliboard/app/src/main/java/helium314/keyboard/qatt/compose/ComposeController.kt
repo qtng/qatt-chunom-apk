@@ -320,8 +320,8 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font && FontStore.isInstalled(ime, font) }
         }
         menu.menu.setGroupCheckable(2, true, true)
-        val icon = prefs.getString(PREF_ICON, "glyphs")
-        val icons = listOf("glyphs" to R.string.compose_icon_glyphs, "note_alt" to R.string.compose_icon_note_alt, "bubble" to R.string.compose_icon_bubble)
+        val icon = prefs.getString(PREF_ICON, "note_alt")
+        val icons = listOf("note_alt" to R.string.compose_icon_note_alt, "bubble" to R.string.compose_icon_bubble)
         icons.forEachIndexed { i, (id, label) -> menu.menu.add(3, 50 + i, 34, label).apply { isCheckable = true; isChecked = icon == id } }
         menu.menu.setGroupCheckable(3, true, true)
         menu.menu.add(Menu.NONE, 22, 40, ime.getString(R.string.compose_update_font, fonts.family.label, fonts.family.sizeMb, fontState(fonts.family)))

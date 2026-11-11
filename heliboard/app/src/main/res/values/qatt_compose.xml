@@ -44,7 +44,6 @@
     <string name="compose_font_busy">A download is already running</string>
     <string name="compose_setup_title">Which scripts do you want to type?</string>
     <string name="compose_setup_ok">OK</string>
-    <string name="compose_icon_glyphs">Icon: glyphs</string>
     <string name="compose_icon_note_alt">Icon: note</string>
     <string name="compose_icon_bubble">Icon: speech bubble</string>
 </resources>

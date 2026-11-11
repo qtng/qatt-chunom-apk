@@ -42,7 +42,6 @@
     <string name="compose_font_busy">Đang có một lượt tải về</string>
     <string name="compose_setup_title">Bạn muốn gõ những chữ nào?</string>
     <string name="compose_setup_ok">OK</string>
-    <string name="compose_icon_glyphs">Biểu tượng: glyphs</string>
     <string name="compose_icon_note_alt">Biểu tượng: ghi chú</string>
     <string name="compose_icon_bubble">Biểu tượng: bong bóng thoại</string>
 </resources>

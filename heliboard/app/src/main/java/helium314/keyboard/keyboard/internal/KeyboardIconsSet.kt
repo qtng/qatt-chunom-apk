@@ -28,10 +28,9 @@ class KeyboardIconsSet private constructor() {
             else -> keyboardIconsMaterial
         }
         val overrideIds = customIconIds(context, prefs)
-        val composeIcon = when (prefs.getString("qatt_compose_icon", "glyphs")) {
-            "note_alt" -> R.drawable.ic_compose_note_alt
+        val composeIcon = when (prefs.getString("qatt_compose_icon", "note_alt")) {
             "bubble" -> R.drawable.ic_compose
-            else -> R.drawable.ic_compose_glyphs
+            else -> R.drawable.ic_compose_note_alt
         }
         val withCompose = defaultIds + (ToolbarKey.COMPOSE.name.lowercase(Locale.US) to composeIcon)
         val ids = if (overrideIds.isEmpty()) withCompose else withCompose + overrideIds
