@@ -93,14 +93,14 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         orientation = VERTICAL
         visibility = GONE
         val top = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL }
-        top.addView(back, LayoutParams(dp(44), dp(44)))
+        top.addView(settings, LayoutParams(dp(44), dp(44)))
         top.addView(field, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(dp(2), dp(4), dp(2), dp(4)) })
         top.addView(format, LayoutParams(LayoutParams.WRAP_CONTENT, dp(40)).apply { setMargins(dp(2), 0, dp(2), 0) })
         top.addView(send, LayoutParams(dp(44), dp(44)))
         addView(top, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
         candidateRow.gravity = Gravity.CENTER_VERTICAL
-        candidateRow.addView(settings, LayoutParams(dp(40), dp(48)))
+        candidateRow.addView(back, LayoutParams(dp(40), dp(48)))
         for (t in toggles) toggleRow.addView(t, LayoutParams(LayoutParams.WRAP_CONTENT, dp(28)).apply { setMargins(0, 0, dp(6), 0) })
         candidateRow.addView(toggleRow, LayoutParams(0, dp(48), CANDIDATES.toFloat()))
         for (c in cells) candidateRow.addView(c, LayoutParams(0, dp(48), 1f))
