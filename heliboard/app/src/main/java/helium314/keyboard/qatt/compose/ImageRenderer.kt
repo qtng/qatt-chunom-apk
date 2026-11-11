@@ -23,14 +23,17 @@ import kotlin.math.ceil
  * Draws the text of the field as an image (the colours of an [ImageStyle]) and gives it a content address for `commitContent`.
  *
  * Apps crop or shrink such images (Messenger and the Claude app show a square, other apps the full width), so the text is set as a block in an imaginary square:
- * at most [PER_LINE] characters a line (a QATT or PA cell counts as one), the block centred in a square, and the square centred on a canvas with the aspect ratio
- * [ASPECT] : 1. A square crop then shows the whole text; an app that shows the full width does not get a huge image.
+ * at most [PER_LINE] characters a line (a QATT or PA cell counts as one), centred, and scaled so that its widest line fills the whole width of the square (no side
+ * padding; [PAD_V] above and below). The square is centred on a canvas with the aspect ratio [ASPECT] : 1. Only if the block is too high for the square, the image
+ * becomes higher (the aspect ratio gives way). A square crop then shows the whole text; an app that shows the full width does not get a huge image.
  */
 object ImageRenderer {
-    private const val TEXT_SIZE = 72f          // pixels
-    private const val PER_LINE = 5
+    private const val BASE_SIZE = 72f          // pixels: the size the text is measured at
+    private const val TARGET_SIDE = 480f       // the side of the square a text is scaled to
+    private const val MAX_SIZE = 160f          // a short text is not blown up beyond this size (the square gets smaller instead)
+    private const val PER_LINE = 8
     private const val ASPECT = 2.5f
-    private const val PADDING = 12
+    private const val PAD_V = 12
     private const val FOLDER = "compose"
 
     /** The cells of [text]: a QATT or PA cell with its joiners and tone marks, else one character. */
@@ -69,20 +72,28 @@ object ImageRenderer {
         return lines
     }
 
+    private fun layoutOf(text: CharSequence, size: Float, color: Int, width: Int, align: Layout.Alignment): StaticLayout {
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = size; this.color = color }
+        @Suppress("DEPRECATION")
+        return StaticLayout(text, paint, width, align, 1.15f, 0f, false)
+    }
+
+    private fun widestLine(l: StaticLayout): Float {
+        var w = 0f
+        for (i in 0 until l.lineCount) w = maxOf(w, l.getLineWidth(i))
+        return w
+    }
+
     fun render(fonts: ComposeFonts, text: CharSequence, style: ImageStyle): Bitmap {
-        val wrapped = wrap(text.toString()).joinToString("\n")
-        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = TEXT_SIZE; color = style.foreground }
-        val styled = fonts.styled(wrapped)
-        @Suppress("DEPRECATION")
-        val wide = StaticLayout(styled, paint, 10_000, Layout.Alignment.ALIGN_NORMAL, 1.15f, 0f, false)
-        var widest = 0f
-        for (i in 0 until wide.lineCount) widest = maxOf(widest, wide.getLineWidth(i))
-        val blockWidth = ceil(widest).toInt().coerceAtLeast(1)
-        @Suppress("DEPRECATION")
-        val layout = StaticLayout(styled, paint, blockWidth, Layout.Alignment.ALIGN_CENTER, 1.15f, 0f, false)
-        val side = maxOf(blockWidth, layout.height.coerceAtLeast(1)) + 2 * PADDING          // the imaginary square
+        val styled = fonts.styled(wrap(text.toString()).joinToString("\n"))
+        // scale the text so that its widest line fills the square (up to MAX_SIZE)
+        val natural = widestLine(layoutOf(styled, BASE_SIZE, style.foreground, 10_000, Layout.Alignment.ALIGN_NORMAL)).coerceAtLeast(1f)
+        val size = BASE_SIZE * minOf(TARGET_SIDE / natural, MAX_SIZE / BASE_SIZE)
+        val blockWidth = ceil(widestLine(layoutOf(styled, size, style.foreground, 10_000, Layout.Alignment.ALIGN_NORMAL))).toInt().coerceAtLeast(1)
+        val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER)
+        val side = blockWidth                                              // the imaginary square: as wide as the text, no side padding
+        val height = maxOf(side, layout.height + 2 * PAD_V)                // higher only if the block does not fit
         val width = ceil(side * ASPECT).toInt()
-        val height = side
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val end = style.backgroundEnd
