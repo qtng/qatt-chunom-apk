@@ -391,9 +391,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     private fun loadSettings() = ComposeSettings(
         pa = prefs.getBoolean(PREF_PA, true),
-        qatt = prefs.getBoolean(PREF_QATT, true),
+        qatt = prefs.getBoolean(PREF_QATT, false),   // default: PA and Chữ Nôm, Space converts to Chữ Nôm
         nom = prefs.getBoolean(PREF_NOM, true),
-        space = SpaceMode.values().firstOrNull { it.name == prefs.getString(PREF_SPACE, "") } ?: SpaceMode.NONE,
+        space = SpaceMode.values().firstOrNull { it.name == prefs.getString(PREF_SPACE, "") } ?: SpaceMode.NOM,
         usage = usage,
     )
 
