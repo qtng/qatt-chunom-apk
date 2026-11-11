@@ -220,6 +220,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             override fun getCount() = SendChoice.ALL.size
             override fun getItem(position: Int) = SendChoice.ALL[position]
             override fun getItemId(position: Int) = position.toLong()
+            // an Image is not possible where the field accepts no images: grey and not to be tapped
+            override fun areAllItemsEnabled() = acceptsImages
+            override fun isEnabled(position: Int) = acceptsImages || SendChoice.ALL[position].format == SendFormat.TEXT
             override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
                 val c = SendChoice.ALL[position]
                 val row = (convertView as? TextView) ?: TextView(context)
@@ -238,6 +241,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
                     row.setBackgroundColor(theme.get(ColorType.KEY_BACKGROUND))
                     row.setTextColor(theme.get(ColorType.KEY_TEXT))
                 }
+                row.alpha = if (isEnabled(position)) 1f else .35f
                 return row
             }
         })
@@ -362,9 +366,11 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val f = field
         fonts.family = ComposeFont.values().firstOrNull { it.name == prefs.getString(PREF_FONT, "") } ?: fonts.family
         val choice = currentChoice()
-        p.setContent(f.text, f.composingStart, SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE)
-        p.setLook(choice.format == SendFormat.IMAGE, choice.style, selected)
-        p.setFormatLabel(ime.getString(if (choice.format == SendFormat.TEXT) R.string.compose_format_text else R.string.compose_format_image))
+        // where the field accepts no images the text is sent: the field looks like Text then, whatever was chosen
+        val image = SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE
+        p.setContent(f.text, f.composingStart, image)
+        p.setLook(image, choice.style, selected)
+        p.setFormatLabel(ime.getString(if (!image) R.string.compose_format_text else R.string.compose_format_image))
         val all = if (selected) f.allCandidates() else emptyList()
         val places = f.settings.slots
         val more = all.size > places

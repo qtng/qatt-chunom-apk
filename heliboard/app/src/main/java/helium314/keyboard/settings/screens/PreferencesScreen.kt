@@ -44,6 +44,9 @@ fun PreferencesScreen(
     val clipboardHistoryEnabled = prefs.getBoolean(Settings.PREF_ENABLE_CLIPBOARD_HISTORY, Defaults.PREF_ENABLE_CLIPBOARD_HISTORY)
     val items = listOf(
         R.string.settings_category_input,
+        Settings.PREF_AUTO_CORRECTION,
+        Settings.PREF_SHOW_SUGGESTIONS,
+        Settings.PREF_BIGRAM_PREDICTIONS,
         Settings.PREF_AUTO_CAP,
         Settings.PREF_KEY_USE_DOUBLE_SPACE_PERIOD,
         Settings.PREF_SHOW_HINTS,
