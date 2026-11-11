@@ -47,9 +47,8 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         fun onFormatSelector(anchor: View)
         fun onSettings(anchor: View)
         fun onMoreToggle()
-        /** The first-time setup: a script switched on or off (0 PA, 1 QATT, 2 Chữ Nôm), a choice for Space, the confirmation */
+        /** The first-time setup: a script switched on or off (0 PA, 1 QATT, 2 Chữ Nôm), the confirmation */
         fun onSetupToggle(index: Int)
-        fun onSetupSpace(mode: SpaceMode)
         fun onSetupConfirm()
     }
 
@@ -228,61 +227,54 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     }
 
     /**
-     * The first-time setup in the place of the keyboard ([height] pixels high): which scripts to type and what Space does. Nothing is chosen at first; OK is possible only
-     * when a script is on. A choice for Space that needs a script that is off is not possible.
+     * The first-time setup in the place of the keyboard ([height] pixels high), all centred: which scripts to type. Nothing is chosen at first; OK is possible only when a
+     * script is on. (What Space does follows from the choice, see [ComposeController].)
      */
-    fun showSetup(scripts: BooleanArray, space: SpaceMode?, height: Int) {
+    fun showSetup(scripts: BooleanArray, height: Int) {
         hideGrid()
         candidateRow.visibility = GONE
         setupBox.removeAllViews()
+        setupBox.gravity = Gravity.CENTER_HORIZONTAL
         val text = colors.get(ColorType.KEY_TEXT)
         val accent = colors.get(ColorType.TOOL_BAR_KEY)
         fun pad(v: View, h: Int, vv: Int) = v.setPadding(dp(h), dp(vv), dp(h), dp(vv))
-        fun label(s: String, size: Float) = TextView(context).apply { this.text = s; setTextSize(TypedValue.COMPLEX_UNIT_SP, size); setTextColor(text); pad(this, 16, 8) }
-        setupBox.addView(label(context.getString(R.string.compose_setup_title), 16f))
-        val chips = LinearLayout(context).apply { pad(this, 12, 0) }
+        setupBox.addView(TextView(context).apply {
+            this.text = context.getString(R.string.compose_setup_title)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            setTextColor(text)
+            gravity = Gravity.CENTER
+            pad(this, 16, 14)
+        }, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        val chips = LinearLayout(context).apply { gravity = Gravity.CENTER }
         listOf("PA", "QATT", "喃").forEachIndexed { i, name ->
             val on = scripts[i]
             chips.addView(TextView(context).apply {
                 this.text = (if (on) "✓ " else "") + name
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
                 setTextColor(text)
                 gravity = Gravity.CENTER
-                pad(this, 18, 8)
+                pad(this, 20, 10)
                 background = GradientDrawable().apply {
-                    cornerRadius = dp(22).toFloat()
+                    cornerRadius = dp(24).toFloat()
                     setColor(if (on) (accent and 0x00FFFFFF) or 0x55000000 else Color.TRANSPARENT)
                     setStroke(dp(1), (text and 0x00FFFFFF) or (if (on) 0xAA000000.toInt() else 0x55000000))
                 }
                 setOnClickListener { listener?.onSetupToggle(i) }
-            }, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { setMargins(dp(4), dp(4), dp(4), dp(4)) })
+            }, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { setMargins(dp(6), dp(4), dp(6), dp(4)) })
         }
-        setupBox.addView(chips)
-        setupBox.addView(label(context.getString(R.string.compose_setup_space), 14f))
-        val modes = listOf(SpaceMode.NONE to R.string.compose_space_none, SpaceMode.PA to R.string.compose_space_pa, SpaceMode.QATT to R.string.compose_space_qatt, SpaceMode.NOM to R.string.compose_space_nom)
-        for ((mode, res) in modes) {
-            val possible = when (mode) { SpaceMode.NONE -> true; SpaceMode.PA -> scripts[0]; SpaceMode.QATT -> scripts[1]; SpaceMode.NOM -> scripts[2] }
-            setupBox.addView(TextView(context).apply {
-                this.text = (if (space == mode) "●  " else "○  ") + context.getString(res)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-                setTextColor(text)
-                alpha = if (possible) 1f else .35f
-                pad(this, 16, 7)
-                if (possible) setOnClickListener { listener?.onSetupSpace(mode) }
-            })
-        }
+        setupBox.addView(chips, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         val ready = scripts.any { it }
         setupBox.addView(TextView(context).apply {
             this.text = context.getString(R.string.compose_setup_ok)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
             gravity = Gravity.CENTER
             setTextColor(if (ready) 0xFF1B1B1B.toInt() else text)
             alpha = if (ready) 1f else .35f
-            pad(this, 28, 10)
-            background = GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(if (ready) accent else Color.TRANSPARENT); setStroke(dp(1), (text and 0x00FFFFFF) or 0x55000000) }
+            pad(this, 36, 11)
+            background = GradientDrawable().apply { cornerRadius = dp(26).toFloat(); setColor(if (ready) accent else Color.TRANSPARENT); setStroke(dp(1), (text and 0x00FFFFFF) or 0x55000000) }
             if (ready) setOnClickListener { listener?.onSetupConfirm() }
-        }, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { setMargins(dp(16), dp(12), dp(16), dp(8)) })
-        setupScroll.layoutParams = (setupScroll.layoutParams as LayoutParams).also { it.height = height.coerceAtLeast(dp(260)) }
+        }, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { setMargins(dp(16), dp(22), dp(16), dp(8)) })
+        setupScroll.layoutParams = (setupScroll.layoutParams as LayoutParams).also { it.height = height.coerceAtLeast(dp(220)) }
         setupScroll.visibility = VISIBLE
     }
 

@@ -54,7 +54,6 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     // the first time the field is used it asks which scripts to type and what Space does (in the place of the keyboard)
     private var setupPending = false
     private val setupScripts = BooleanArray(3)           // PA, QATT, Chữ Nôm: nothing chosen at first
-    private var setupSpace: SpaceMode? = null
     private var expanded = false      // the rest of the candidates as a grid in the place of the keyboard
 
     var active = false
@@ -118,7 +117,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     private fun open() {
         setupPending = !prefs.getBoolean(PREF_SETUP_DONE, false)
-        if (setupPending) { setupScripts.fill(false); setupSpace = null }
+        if (setupPending) setupScripts.fill(false)
         active = true
         selected = true
         ignoreSelectionUntil = System.currentTimeMillis() + 600
@@ -196,21 +195,35 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         refresh()
     }
 
-    override fun onSetupToggle(index: Int) {
+    override fun onSetupToggle(index: Int) = guarded("setup toggle") {
+        ignoreSelectionUntil = System.currentTimeMillis() + 1500
         setupScripts[index] = !setupScripts[index]
-        val needs = when (setupSpace) { SpaceMode.PA -> 0; SpaceMode.QATT -> 1; SpaceMode.NOM -> 2; else -> -1 }
-        if (needs >= 0 && !setupScripts[needs]) setupSpace = null       // Space cannot convert to a script that is off
         refresh()
     }
 
-    override fun onSetupSpace(mode: SpaceMode) { setupSpace = mode; refresh() }
+    /** What Space does after the setup: Chữ Nôm if it is on; else the one script that is on; else (PA and QATT) PA. */
+    private fun spaceModeFor(pa: Boolean, qatt: Boolean, nom: Boolean) = when {
+        nom -> SpaceMode.NOM
+        qatt && !pa -> SpaceMode.QATT
+        else -> SpaceMode.PA
+    }
 
-    override fun onSetupConfirm() {
-        if (setupScripts.none { it }) return
-        saveSettings(field.settings.copy(pa = setupScripts[0], qatt = setupScripts[1], nom = setupScripts[2], space = setupSpace ?: SpaceMode.NONE))
+    override fun onSetupConfirm() = guarded("setup confirm") {
+        if (setupScripts.none { it }) return@guarded
+        ignoreSelectionUntil = System.currentTimeMillis() + 1500        // the keyboard comes back: the window changes, the app may report its cursor again
+        val (pa, qatt, nom) = setupScripts.toList()
+        saveSettings(field.settings.copy(pa = pa, qatt = qatt, nom = nom, space = spaceModeFor(pa, qatt, nom)))
         prefs.edit { putBoolean(PREF_SETUP_DONE, true) }
         setupPending = false
         refresh()
+    }
+
+    /** A failure in the setup must not take the keyboard down: it is logged and shown as a message. */
+    private inline fun guarded(what: String, block: () -> Unit) {
+        try { block() } catch (e: Exception) {
+            android.util.Log.e("QattCompose", what, e)
+            Toast.makeText(ime, "$what: ${e}", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onMoreToggle() {
@@ -410,7 +423,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         p.setMore(more, expanded)
         if (setupPending) {                         // the first-time setup replaces the keyboard
             keyboardWrapper?.visibility = View.GONE
-            p.showSetup(setupScripts, setupSpace, keyboardHeight)
+            p.showSetup(setupScripts, keyboardHeight)
             return
         }
         p.hideSetup()
