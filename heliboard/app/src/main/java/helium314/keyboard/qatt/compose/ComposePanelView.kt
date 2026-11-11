@@ -46,7 +46,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         fun onFormatSelector(anchor: View)
         fun onSettings(anchor: View)
         fun onMoreToggle()
-        /** A switch of the bar: 0 PA, 1 Chữ Nôm, 2 QATT */
+        /** A switch of the bar: 0 PA, 1 QATT, 2 Chữ Nôm */
         fun onToggle(index: Int)
     }
 
@@ -76,18 +76,16 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     private val more = iconButton(R.drawable.ic_compose_more, context.getString(R.string.compose_more)) { listener?.onMoreToggle() }
     private val candidateRow = LinearLayout(context)
     // while there are no candidates the bar shows the switches of the scripts: PA, 喃 (Chữ Nôm), QATT
-    private val toggleLabels = listOf("PA", "喃", "QATT")
+    private val toggleLabels = listOf("PA", "QATT", "喃")
     private val toggles = List(3) { i ->
-        TextView(context).apply {
-            gravity = Gravity.CENTER
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+        ToggleChip(context).apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
             text = toggleLabels[i]
-            setPadding(dp(14), 0, dp(14), 0)
-            isClickable = true
+            setPadding(dp(10), 0, dp(12), 0)
             setOnClickListener { listener?.onToggle(i) }
         }
     }
-    private val toggleRow = LinearLayout(context).apply { gravity = Gravity.CENTER; visibility = GONE }
+    private val toggleRow = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.START; visibility = GONE }
     private val grid = GridLayout(context)
     private val gridScroll = ScrollView(context)
 
@@ -103,7 +101,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
         candidateRow.gravity = Gravity.CENTER_VERTICAL
         candidateRow.addView(settings, LayoutParams(dp(40), dp(48)))
-        for (t in toggles) toggleRow.addView(t, LayoutParams(LayoutParams.WRAP_CONTENT, dp(36)).apply { setMargins(dp(6), 0, dp(6), 0) })
+        for (t in toggles) toggleRow.addView(t, LayoutParams(LayoutParams.WRAP_CONTENT, dp(28)).apply { setMargins(0, 0, dp(6), 0) })
         candidateRow.addView(toggleRow, LayoutParams(0, dp(48), CANDIDATES.toFloat()))
         for (c in cells) candidateRow.addView(c, LayoutParams(0, dp(48), 1f))
         candidateRow.addView(more, LayoutParams(dp(40), dp(48)))
@@ -179,14 +177,14 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         for (c in cells) if (list.isEmpty()) c.visibility = GONE
     }
 
-    /** Which scripts are among the candidates; a switched-on one is filled, a switched-off one only outlined. */
-    fun setToggles(pa: Boolean, nom: Boolean, qatt: Boolean) {
+    /** Which scripts are among the candidates (PA, QATT, Chữ Nôm): a switched-on one is filled and has a check mark in its corner, a switched-off one is only outlined with a cross mark. */
+    fun setToggles(pa: Boolean, qatt: Boolean, nom: Boolean) {
         val text = colors.get(ColorType.KEY_TEXT)
-        listOf(pa, nom, qatt).forEachIndexed { i, on ->
-            toggles[i].text = (if (on) "✓ " else "✗ ") + toggleLabels[i]
+        listOf(pa, qatt, nom).forEachIndexed { i, on ->
+            toggles[i].on = on
             toggles[i].setTextColor(if (on) text else (text and 0x00FFFFFF) or 0x88000000.toInt())
             toggles[i].background = GradientDrawable().apply {
-                cornerRadius = dp(18).toFloat()
+                cornerRadius = dp(14).toFloat()
                 setColor(if (on) (text and 0x00FFFFFF) or 0x30000000 else Color.TRANSPARENT)
                 setStroke(dp(1), (text and 0x00FFFFFF) or (if (on) 0x90000000.toInt() else 0x40000000))
             }
@@ -226,6 +224,34 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     fun hideGrid() {
         gridScroll.visibility = GONE
         grid.removeAllViews()
+    }
+
+    /** A switch of the bar: a small round mark in its upper right corner shows the state (a check on green, a cross on grey). */
+    class ToggleChip(context: Context) : TextView(context) {
+        var on = false
+            set(v) { field = v; invalidate() }
+        private val dot = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val mark = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt(); style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
+
+        init { gravity = Gravity.CENTER; isClickable = true }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val d = resources.displayMetrics.density
+            val r = 5.5f * d
+            val cx = width - r - 1 * d
+            val cy = r - 2 * d
+            dot.color = if (on) 0xFF2E9E5B.toInt() else 0xFF8A8A8A.toInt()
+            canvas.drawCircle(cx, cy, r, dot)
+            mark.strokeWidth = 1.4f * d
+            if (on) {                                   // check
+                canvas.drawLine(cx - .45f * r, cy + .0f * r, cx - .1f * r, cy + .4f * r, mark)
+                canvas.drawLine(cx - .1f * r, cy + .4f * r, cx + .5f * r, cy - .35f * r, mark)
+            } else {                                    // cross
+                canvas.drawLine(cx - .35f * r, cy - .35f * r, cx + .35f * r, cy + .35f * r, mark)
+                canvas.drawLine(cx - .35f * r, cy + .35f * r, cx + .35f * r, cy - .35f * r, mark)
+            }
+        }
     }
 
     class CandidateCell(context: Context) : LinearLayout(context) {

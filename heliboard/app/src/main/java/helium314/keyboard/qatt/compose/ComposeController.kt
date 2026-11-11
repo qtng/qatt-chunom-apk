@@ -177,10 +177,10 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         refresh()
     }
 
-    /** A switch of the candidate bar (0 PA, 1 Chữ Nôm, 2 QATT). */
+    /** A switch of the candidate bar (0 PA, 1 QATT, 2 Chữ Nôm). */
     override fun onToggle(index: Int) {
         val s = field.settings
-        saveSettings(when (index) { 0 -> s.copy(pa = !s.pa); 1 -> s.copy(nom = !s.nom); else -> s.copy(qatt = !s.qatt) })
+        saveSettings(when (index) { 0 -> s.copy(pa = !s.pa); 1 -> s.copy(qatt = !s.qatt); else -> s.copy(nom = !s.nom) })
         refresh()
     }
 
@@ -372,7 +372,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val more = all.size > places
         if (!more) expanded = false
         p.setCandidates(all.take(places))
-        p.setToggles(f.settings.pa, f.settings.nom, f.settings.qatt)
+        p.setToggles(f.settings.pa, f.settings.qatt, f.settings.nom)
         p.setMore(more, expanded)
         // the rest of the candidates replaces the keyboard
         if (expanded && selected && more) {
