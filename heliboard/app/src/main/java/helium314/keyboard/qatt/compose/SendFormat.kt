@@ -11,8 +11,8 @@ enum class SendFormat { TEXT, IMAGE }
 enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEnd: Int? = null) {
     BLACK_ON_WHITE(0xFF000000.toInt(), 0xFFFFFFFF.toInt()),
     WHITE_ON_BLACK(0xFFFFFFFF.toInt(), 0xFF000000.toInt()),
-    INK_ON_RICE_PAPER(0xFF1B1B1B.toInt(), 0xFFF3EAD3.toInt()),       // black ink on the colour of rice paper: the classic Asian look
-    GOLD_ON_DARK(0xFFE8BD55.toInt(), 0xFF16181F.toInt()),
+    INK_ON_RICE_PAPER(0xFF1B1B1B.toInt(), 0xFFF7EEDB.toInt(), 0xFFE2C48C.toInt()),   // black ink on rice paper that warms to old parchment: the classic Asian look
+    LACQUER_GRADIENT(0xFFFFFFFF.toInt(), 0xFFC8372D.toInt(), 0xFF5E0B12.toInt()),   // "Lacquer" (sơn mài): vermilion to deep oxblood; it took the place of GOLD_ON_DARK (Gold leaf), see SendFormatChoices
     MOSS_GRADIENT(0xFFFFFFFF.toInt(), 0xFF7E9A4E.toInt(), 0xFF2F4A24.toInt()),   // "Moss garden": it took the place of RED_ON_CREAM (Cinnabar), see SendFormatChoices
     PINK_GRADIENT(0xFFFFFFFF.toInt(), 0xFFEC6FA6.toInt(), 0xFFB0245E.toInt()),
     SUNSET_GRADIENT(0xFFFFFFFF.toInt(), 0xFFF2994A.toInt(), 0xFF6A3093.toInt()),
@@ -22,7 +22,7 @@ enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEn
 
     companion object {
         /** The styles of Lucky draw: the coloured ones (the surprise lives on the colours). */
-        val LUCKY_POOL = listOf(GOLD_ON_DARK, MOSS_GRADIENT, PINK_GRADIENT, SUNSET_GRADIENT, OCEAN_GRADIENT)
+        val LUCKY_POOL = listOf(LACQUER_GRADIENT, MOSS_GRADIENT, PINK_GRADIENT, SUNSET_GRADIENT, OCEAN_GRADIENT, INK_ON_RICE_PAPER)
 
         /** A style of [LUCKY_POOL] drawn by chance, never [last] again (two times the same in a row would look broken). */
         fun drawLucky(last: ImageStyle?, random: kotlin.random.Random = kotlin.random.Random.Default): ImageStyle =

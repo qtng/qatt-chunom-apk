@@ -134,13 +134,13 @@ class SendFormatTest {
         assertEquals(ImageStyle.BLACK_ON_WHITE, SendChoice.ALL[0].style)         // the order of the first entries is kept
         assertEquals(ImageStyle.WHITE_ON_BLACK, SendChoice.ALL[1].style)
         assertEquals(0xFF1B1B1B.toInt(), ImageStyle.INK_ON_RICE_PAPER.foreground)
-        assertFalse(ImageStyle.INK_ON_RICE_PAPER.isGradient)
+        assertTrue(ImageStyle.INK_ON_RICE_PAPER.isGradient)                       // a light gradient: it counts among the coloured styles
         assertTrue(SendChoice.ALL.dropLast(1).all { it.format == SendFormat.IMAGE })
         assertEquals(0xFF000000.toInt(), ImageStyle.BLACK_ON_WHITE.foreground)
         assertEquals(0xFFFFFFFF.toInt(), ImageStyle.BLACK_ON_WHITE.background)
         assertEquals(ImageStyle.BLACK_ON_WHITE.foreground, ImageStyle.WHITE_ON_BLACK.background)
         // solid colours and gradients
-        assertFalse(ImageStyle.GOLD_ON_DARK.isGradient)
+        assertFalse(ImageStyle.WHITE_ON_BLACK.isGradient)
         assertTrue(ImageStyle.PINK_GRADIENT.isGradient)
         assertTrue(ImageStyle.values().filter { it.isGradient }.all { it.backgroundEnd != it.background })
         // the text stands out from the background (not the same colour)

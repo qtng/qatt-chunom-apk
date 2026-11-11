@@ -20,7 +20,7 @@
     <string name="compose_space_qatt">Space: converts to QATT</string>
     <string name="compose_space_nom">Space: converts to Chữ Nôm</string>
     <string name="compose_forget_choices">Reset Text/Image per app</string>
-    <string name="compose_style_gold_on_dark">Image: Gold leaf</string>
+    <string name="compose_style_lacquer_gradient">Image: Lacquer</string>
     <string name="compose_style_moss_gradient">Image: Moss garden</string>
     <string name="compose_style_pink_gradient">Image: Lotus</string>
     <string name="compose_style_sunset_gradient">Image: Sunset</string>

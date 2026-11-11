@@ -34,7 +34,7 @@ class SendFormatChoices(private val limit: Int = 200) {
 
     companion object {
         /** Styles that were replaced: a stored choice of the old one is the new one. */
-        private val RENAMED = mapOf("RED_ON_CREAM" to "MOSS_GRADIENT")
+        private val RENAMED = mapOf("RED_ON_CREAM" to "MOSS_GRADIENT", "GOLD_ON_DARK" to "LACQUER_GRADIENT")
         private const val LUCKY = "LUCKY"
 
         fun deserialize(s: String?, limit: Int = 200): SendFormatChoices {
