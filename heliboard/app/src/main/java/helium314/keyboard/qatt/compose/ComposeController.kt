@@ -256,7 +256,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     private fun sendImage(text: String, style: ImageStyle): Boolean = try {
         val editorInfo = ime.currentInputEditorInfo ?: return false
-        val bitmap = ImageRenderer.render(fonts, text, style)
+        val bitmap = ImageRenderer.render(fonts, text, style, ImageRenderer.isSquareApp(packageName))
         val uri = ImageRenderer.save(ime, bitmap, ime.getString(R.string.qatt_compose_provider_authority))
         val info = InputContentInfoCompat(uri, ClipDescription("QATT", arrayOf("image/png")), null)
         ime.inputLogic.mConnection.commitContent(info, editorInfo)
@@ -426,7 +426,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val choice = currentChoice()
         // where the field accepts no images the text is sent: the field looks like Text then, whatever was chosen
         val image = SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE
-        p.setContent(f.text, f.composingStart, f.cursor, image)
+        p.setContent(f.text, f.composingStart, f.cursor, image, ImageRenderer.isSquareApp(packageName))
         p.setLook(image, choice.style, selected)
         p.setFormatLabel(ime.getString(if (!image) R.string.compose_format_text else R.string.compose_format_image))
         p.setSendReady(f.text.isNotBlank())

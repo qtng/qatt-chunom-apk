@@ -22,7 +22,10 @@ import kotlin.math.ceil
 /**
  * Draws the text of the field as an image (the colours of an [ImageStyle]) and gives it a content address for `commitContent`.
  *
- * Apps crop or shrink such images (Messenger and the Claude app show a square, other apps the full width), so the text is set as a block in an imaginary square,
+ * Normally ([square] false) the text fills the image: at most [FREE_PER_LINE] characters a line, [FREE_PAD] pixels around it, centred; the image is at least
+ * [FREE_ASPECT] times as wide as it is high (it gets wider if the text alone is narrower).
+ *
+ * Some apps crop such images to a small square (the Claude app; [SQUARE_APPS]); for them ([square] true) the text is set as a block in an imaginary square,
  * centred and scaled so that its widest line fills the width of the square ([PAD_H] at the sides, [PAD_V] above and below). The square is centred on a canvas whose
  * aspect ratio is [ASPECT] : 1 for one line and gets 10 % smaller with every further line; a line holds at most 5 + L characters (a QATT or PA cell counts as one),
  * where L is the number of lines (6, 7, 8, ...). Only if the block is too high for the square, the image becomes higher (the aspect ratio gives way). A square crop
@@ -41,11 +44,22 @@ object ImageRenderer {
     private const val LINE_GAP = 4f            // the distance between two lines is the character height (the text size) plus this, in pixels
     private const val FOLDER = "compose"
 
+    private const val FREE_SIZE = 96f          // pixels: the text size of the normal image
+    private const val FREE_PER_LINE = 12
+    private const val FREE_PAD = 12
+    private const val FREE_ASPECT = 3f
+
+    /** The apps that crop an image to a small square: they get the square layout. More are added when they become known. */
+    val SQUARE_APPS = setOf("com.anthropic.claude")
+
+    fun isSquareApp(packageName: String?) = packageName != null && packageName in SQUARE_APPS
+
     /** The lines: at most [perLine] cells each (see [LineWrap]). */
     fun wrap(text: String, perLine: Int): List<String> = LineWrap.wrap(text, perLine)
 
     /** The lines and their number L: the smallest L for which the text wraps into at most L lines of at most 5 + L characters. */
-    fun lines(text: String): List<String> {
+    fun lines(text: String, square: Boolean): List<String> {
+        if (!square) return wrap(text, FREE_PER_LINE)
         var l = 1
         var lines = wrap(text, MIN_PER_LINE)
         while (lines.size > l && l < MAX_LINES) { l++; lines = wrap(text, MIN_PER_LINE - 1 + l) }
@@ -64,8 +78,9 @@ object ImageRenderer {
         return w
     }
 
-    fun render(fonts: ComposeFonts, text: CharSequence, style: ImageStyle): Bitmap {
-        val textLines = lines(text.toString())
+    fun render(fonts: ComposeFonts, text: CharSequence, style: ImageStyle, square: Boolean): Bitmap {
+        if (!square) return renderFree(fonts, text, style)
+        val textLines = lines(text.toString(), true)
         val styled = fonts.styled(textLines.joinToString("\n"))
         // scale the text so that its widest line fills the square (up to MAX_SIZE)
         val natural = widestLine(layoutOf(styled, BASE_SIZE, style.foreground, 10_000, Layout.Alignment.ALIGN_NORMAL)).coerceAtLeast(1f)
@@ -79,6 +94,23 @@ object ImageRenderer {
         val height = maxOf(side, layout.height + 2 * PAD_V)                // higher only if the block does not fit
         val aspect = ASPECT * Math.pow(ASPECT_STEP.toDouble(), (textLines.size - 1).toDouble()).toFloat()
         val width = ceil(side * aspect).toInt()
+        return draw(layout, blockWidth, width, height, style)
+    }
+
+    /** The normal image: the text at [FREE_SIZE] with [FREE_PAD] around it, at least [FREE_ASPECT] : 1, the text centred both ways. */
+    private fun renderFree(fonts: ComposeFonts, text: CharSequence, style: ImageStyle): Bitmap {
+        val styled = fonts.styled(lines(text.toString(), false).joinToString("\n"))
+        val size = FREE_SIZE
+        val blockWidth = ceil(widestLine(layoutOf(styled, size, style.foreground, 10_000, Layout.Alignment.ALIGN_NORMAL))).toInt().coerceAtLeast(1)
+        val probe = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER)
+        val fontLine = (probe.getLineBottom(0) - probe.getLineTop(0)).coerceAtLeast(1)
+        val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER, (size + LINE_GAP) / fontLine)
+        val height = layout.height + 2 * FREE_PAD
+        val width = maxOf(blockWidth + 2 * FREE_PAD, ceil(height * FREE_ASPECT).toInt())
+        return draw(layout, blockWidth, width, height, style)
+    }
+
+    private fun draw(layout: StaticLayout, blockWidth: Int, width: Int, height: Int, style: ImageStyle): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val end = style.backgroundEnd
