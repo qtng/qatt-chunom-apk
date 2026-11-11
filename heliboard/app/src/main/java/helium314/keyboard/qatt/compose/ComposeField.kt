@@ -19,6 +19,7 @@ data class Candidate(val kind: Kind, val text: String, val reading: String? = nu
 data class ComposeSettings(
     val pa: Boolean = true,                   // PA among the candidates
     val qatt: Boolean = true,                 // QATT among the candidates
+    val nom: Boolean = true,                  // Chữ Nôm among the candidates
     val space: SpaceMode = SpaceMode.NONE,
     val slots: Int = 5,                       // places of the candidate bar
     val usage: Map<String, Int> = emptyMap(), // how often a Chữ Nôm glyph was chosen (the order of the candidates)
@@ -110,7 +111,7 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
         fun add(c: Candidate) { if (c.text.isNotEmpty() && c.text !in out) out[c.text] = c }
         if (settings.pa) PaText.word(w, parser)?.let { add(Candidate(Kind.PA, it)) }
         if (settings.qatt) QattText.word(w, parser)?.let { add(Candidate(Kind.QATT, it)) }
-        for (c in nom.lookup(w, settings.usage, MAX_NOM)) add(Candidate(Kind.NOM, c.glyph, c.reading))
+        if (settings.nom) for (c in nom.lookup(w, settings.usage, MAX_NOM)) add(Candidate(Kind.NOM, c.glyph, c.reading))
         return out.values.toList()
     }
 

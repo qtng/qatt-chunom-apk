@@ -10,6 +10,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.PopupMenu
+import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.latin.common.ColorType
+import android.widget.TextView
+import android.widget.ListPopupWindow
+import android.widget.BaseAdapter
+import android.util.TypedValue
+import android.graphics.drawable.GradientDrawable
 import androidx.core.content.edit
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import helium314.keyboard.event.Event
@@ -138,7 +145,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         expanded = false
         val f = field
         when {
-            event.keyCode == KeyCode.DELETE -> f.backspace()
+            event.keyCode == KeyCode.DELETE -> if (f.isEmpty) { close(); return true } else f.backspace()
             event.isFunctionalKeyEvent || event.codePoint < 0 -> return false      // Shift, the switches of the keyboard, …
             event.codePoint == '\n'.code -> f.enter()
             event.codePoint == ' '.code -> f.space()
@@ -170,6 +177,13 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         refresh()
     }
 
+    /** A switch of the candidate bar (0 PA, 1 Chữ Nôm, 2 QATT). */
+    override fun onToggle(index: Int) {
+        val s = field.settings
+        saveSettings(when (index) { 0 -> s.copy(pa = !s.pa); 1 -> s.copy(nom = !s.nom); else -> s.copy(qatt = !s.qatt) })
+        refresh()
+    }
+
     override fun onMoreToggle() {
         if (!expanded) keyboardWrapper?.height?.takeIf { it > 0 }?.let { keyboardHeight = it }   // the grid is as high as the keyboard
         expanded = !expanded
@@ -198,17 +212,39 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     override fun onFormatSelector(anchor: View) {
         val current = currentChoice()
-        val menu = PopupMenu(anchor.context, anchor)
-        SendChoice.ALL.forEachIndexed { i, c ->
-            menu.menu.add(Menu.NONE, i, i, longLabel(c)).apply { isCheckable = true; isChecked = c == current }
-        }
-        menu.menu.setGroupCheckable(Menu.NONE, true, true)
-        menu.setOnMenuItemClickListener { item ->
-            packageName?.let { choices[it] = SendChoice.ALL[item.itemId]; prefs.edit { putString(PREF_CHOICES, choices.serialize()) } }
+        val context = anchor.context
+        val density = context.resources.displayMetrics.density
+        val popup = ListPopupWindow(context)
+        popup.anchorView = anchor
+        popup.isModal = true
+        popup.width = (230 * density).toInt()
+        popup.setAdapter(object : BaseAdapter() {
+            override fun getCount() = SendChoice.ALL.size
+            override fun getItem(position: Int) = SendChoice.ALL[position]
+            override fun getItemId(position: Int) = position.toLong()
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+                val c = SendChoice.ALL[position]
+                val row = (convertView as? TextView) ?: TextView(context)
+                row.text = (if (c == current) "✓  " else "     ") + longLabel(c)
+                row.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                row.setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (12 * density).toInt())
+                if (c.format == SendFormat.IMAGE) {          // the row shows the colours of its style
+                    row.setTextColor(c.style.foreground)
+                    row.background = GradientDrawable().apply {
+                        val end = c.style.backgroundEnd
+                        if (end != null) { orientation = GradientDrawable.Orientation.LEFT_RIGHT; colors = intArrayOf(c.style.background, end) }
+                        else setColor(c.style.background)
+                    }
+                } else { row.background = null; row.setTextColor(Settings.getValues().mColors.get(ColorType.KEY_TEXT)) }
+                return row
+            }
+        })
+        popup.setOnItemClickListener { _, _, position, _ ->
+            packageName?.let { choices[it] = SendChoice.ALL[position]; prefs.edit { putString(PREF_CHOICES, choices.serialize()) } }
+            popup.dismiss()
             refresh()
-            true
         }
-        menu.show()
+        popup.show()
     }
 
     override fun onSettings(anchor: View) {
@@ -216,6 +252,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val menu = PopupMenu(anchor.context, anchor)
         menu.menu.add(Menu.NONE, 1, 1, R.string.compose_pa_candidates).apply { isCheckable = true; isChecked = s.pa }
         menu.menu.add(Menu.NONE, 2, 2, R.string.compose_qatt_candidates).apply { isCheckable = true; isChecked = s.qatt }
+        menu.menu.add(Menu.NONE, 3, 3, R.string.compose_nom_candidates).apply { isCheckable = true; isChecked = s.nom }
         val modes = listOf(
             SpaceMode.NONE to R.string.compose_space_none, SpaceMode.PA to R.string.compose_space_pa,
             SpaceMode.QATT to R.string.compose_space_qatt, SpaceMode.NOM to R.string.compose_space_nom,
@@ -234,6 +271,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             when (item.itemId) {
                 1 -> saveSettings(s.copy(pa = !s.pa))
                 2 -> saveSettings(s.copy(qatt = !s.qatt))
+                3 -> saveSettings(s.copy(nom = !s.nom))
                 in 10..13 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
                 in 30..32 -> chooseFont(ComposeFont.values()[item.itemId - 30])
                 22 -> updateFont(fonts.family)
@@ -330,6 +368,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val more = all.size > places
         if (!more) expanded = false
         p.setCandidates(all.take(places))
+        p.setToggles(f.settings.pa, f.settings.nom, f.settings.qatt)
         p.setMore(more, expanded)
         // the rest of the candidates replaces the keyboard
         if (expanded && selected && more) {
@@ -346,13 +385,14 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private fun loadSettings() = ComposeSettings(
         pa = prefs.getBoolean(PREF_PA, true),
         qatt = prefs.getBoolean(PREF_QATT, true),
+        nom = prefs.getBoolean(PREF_NOM, true),
         space = SpaceMode.values().firstOrNull { it.name == prefs.getString(PREF_SPACE, "") } ?: SpaceMode.NONE,
         usage = usage,
     )
 
     private fun saveSettings(s: ComposeSettings) {
         field.settings = s
-        prefs.edit { putBoolean(PREF_PA, s.pa); putBoolean(PREF_QATT, s.qatt); putString(PREF_SPACE, s.space.name) }
+        prefs.edit { putBoolean(PREF_PA, s.pa); putBoolean(PREF_QATT, s.qatt); putBoolean(PREF_NOM, s.nom); putString(PREF_SPACE, s.space.name) }
     }
 
     // how often each Chữ Nôm glyph was chosen: the order of the candidates (one line "glyph TAB count" each)
@@ -373,6 +413,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     companion object {
         private const val PREF_CHOICES = "qatt_compose_send_choices"
+        private const val PREF_NOM = "qatt_compose_nom"
         private const val PREF_PA = "qatt_compose_pa"
         private const val PREF_QATT = "qatt_compose_qatt"
         private const val PREF_SPACE = "qatt_compose_space"

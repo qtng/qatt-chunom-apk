@@ -76,9 +76,9 @@ object Defaults {
     const val PREF_KEY_USE_PERSONALIZED_DICTS = true
     const val PREF_KEY_USE_DOUBLE_SPACE_PERIOD = true
     const val PREF_BLOCK_POTENTIALLY_OFFENSIVE = true
-    const val PREF_SHOW_LANGUAGE_SWITCH_KEY = false
+    const val PREF_SHOW_LANGUAGE_SWITCH_KEY = true
     const val PREF_LANGUAGE_SWITCH_KEY = "internal"
-    const val PREF_SHOW_EMOJI_KEY = false
+    const val PREF_SHOW_EMOJI_KEY = true
     const val PREF_SHOW_DPAD_KEY = true
     const val PREF_VARIABLE_TOOLBAR_DIRECTION = true
     const val PREF_ADDITIONAL_SUBTYPES = "de${Separators.SET}${ExtraValue.KEYBOARD_LAYOUT_SET}=MAIN:qwerty${Separators.SETS}" +
@@ -145,7 +145,7 @@ object Defaults {
     @SuppressLint("RtlHardcoded")
     const val PREF_ONE_HANDED_GRAVITY = Gravity.LEFT
     const val PREF_ONE_HANDED_SCALE = 1f
-    const val PREF_SHOW_NUMBER_ROW = false
+    const val PREF_SHOW_NUMBER_ROW = true
     const val PREF_SHOW_NUMBER_ROW_IN_SYMBOLS = true
     const val PREF_LOCALIZED_NUMBER_ROW = true
     const val PREF_SHOW_NUMBER_ROW_HINTS = false
@@ -153,7 +153,7 @@ object Defaults {
     const val PREF_SHOW_HINTS = true
     const val PREF_POPUP_KEYS_ORDER = POPUP_KEYS_ORDER_DEFAULT
     const val PREF_POPUP_KEYS_HINT_ORDER = POPUP_KEYS_LABEL_DEFAULT
-    const val PREF_SHOW_POPUP_HINTS = false
+    const val PREF_SHOW_POPUP_HINTS = true
     const val PREF_SHOW_TLD_POPUP_KEYS = true
     const val PREF_MORE_POPUP_KEYS = "main"
     const val PREF_SPACE_TO_CHANGE_LANG = true

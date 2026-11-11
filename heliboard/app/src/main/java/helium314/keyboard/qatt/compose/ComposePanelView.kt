@@ -4,6 +4,7 @@ package helium314.keyboard.qatt.compose
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -45,6 +46,8 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         fun onFormatSelector(anchor: View)
         fun onSettings(anchor: View)
         fun onMoreToggle()
+        /** A switch of the bar: 0 PA, 1 Chữ Nôm, 2 QATT */
+        fun onToggle(index: Int)
     }
 
     var listener: Listener? = null
@@ -72,6 +75,18 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     private val cells = List(CANDIDATES) { i -> CandidateCell(context).also { it.setOnClickListener { listener?.onCandidate(i) } } }
     private val more = iconButton(R.drawable.ic_compose_more, context.getString(R.string.compose_more)) { listener?.onMoreToggle() }
     private val candidateRow = LinearLayout(context)
+    // while there are no candidates the bar shows the switches of the scripts: PA, 喃 (Chữ Nôm), QATT
+    private val toggleLabels = listOf("PA", "喃", "QATT")
+    private val toggles = List(3) { i ->
+        TextView(context).apply {
+            gravity = Gravity.CENTER
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            text = toggleLabels[i]
+            isClickable = true
+            setOnClickListener { listener?.onToggle(i) }
+        }
+    }
+    private val toggleRow = LinearLayout(context).apply { gravity = Gravity.CENTER; visibility = GONE }
     private val grid = GridLayout(context)
     private val gridScroll = ScrollView(context)
 
@@ -87,6 +102,8 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
         candidateRow.gravity = Gravity.CENTER_VERTICAL
         candidateRow.addView(settings, LayoutParams(dp(40), dp(48)))
+        for (t in toggles) toggleRow.addView(t, LayoutParams(0, dp(36), 1f).apply { setMargins(dp(6), 0, dp(6), 0) })
+        candidateRow.addView(toggleRow, LayoutParams(0, dp(48), CANDIDATES.toFloat()))
         for (c in cells) candidateRow.addView(c, LayoutParams(0, dp(48), 1f))
         candidateRow.addView(more, LayoutParams(dp(40), dp(48)))
         addView(candidateRow, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
@@ -157,6 +174,21 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     /** The first candidates (at most five); a place without one is empty. */
     fun setCandidates(list: List<Candidate>) {
         cells.forEachIndexed { i, cell -> cell.set(list.getOrNull(i), fonts) }
+        toggleRow.visibility = if (list.isEmpty()) VISIBLE else GONE       // no candidates: the switches take the place of the bar
+        for (c in cells) if (list.isEmpty()) c.visibility = GONE
+    }
+
+    /** Which scripts are among the candidates; a switched-on one is filled, a switched-off one only outlined. */
+    fun setToggles(pa: Boolean, nom: Boolean, qatt: Boolean) {
+        val text = colors.get(ColorType.KEY_TEXT)
+        listOf(pa, nom, qatt).forEachIndexed { i, on ->
+            toggles[i].setTextColor(if (on) text else (text and 0x00FFFFFF) or 0x88000000.toInt())
+            toggles[i].background = GradientDrawable().apply {
+                cornerRadius = dp(18).toFloat()
+                setColor(if (on) (text and 0x00FFFFFF) or 0x30000000 else Color.TRANSPARENT)
+                setStroke(dp(1), (text and 0x00FFFFFF) or (if (on) 0x90000000.toInt() else 0x40000000))
+            }
+        }
     }
 
     /** The triangle: shown when there are more candidates; pointing up while they are open. */
