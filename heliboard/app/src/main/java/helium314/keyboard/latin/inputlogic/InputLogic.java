@@ -1046,7 +1046,9 @@ public final class InputLogic {
             return;
         }
         final String prefix = before.subSequence(before.length() - n, before.length()).toString();
-        final List<String> completions = viSuggester().complete(prefix, 3);
+        // the typed word itself first if it is a word of the list (it is not among its own completions), then the completions; the strip shows three, the rest is for "more suggestions"
+        final List<String> completions = new ArrayList<>(viSuggester().complete(prefix, 12));
+        if (viSuggester().contains(prefix)) completions.add(0, prefix);
         if (completions.isEmpty()) {
             mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
             return;
