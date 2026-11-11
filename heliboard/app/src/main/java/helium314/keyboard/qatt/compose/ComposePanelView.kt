@@ -57,7 +57,8 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Int) = (v * density).toInt()
 
-    private val back = iconButton(R.drawable.ic_arrow_back, context.getString(R.string.compose_back)) { listener?.onBack() }
+    private val back = iconButton(R.drawable.ic_compose_down, context.getString(R.string.compose_back)) { listener?.onBack() }
+    private val backRight = iconButton(R.drawable.ic_compose_down, context.getString(R.string.compose_back)) { listener?.onBack() }
     val field = FieldView(context)
     private val format = TextView(context).apply {
         gravity = Gravity.CENTER
@@ -96,6 +97,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         candidateRow.addView(back, LayoutParams(dp(40), dp(48)))
         for (c in cells) candidateRow.addView(c, LayoutParams(0, dp(48), 1f))
         candidateRow.addView(more, LayoutParams(dp(40), dp(48)))
+        candidateRow.addView(backRight, LayoutParams(dp(40), dp(48)).apply { setMargins(0, 0, dp(4), 0) })   // directly under the send button
         addView(candidateRow, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
 
         setupScroll.addView(setupBox, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
@@ -138,7 +140,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     fun applyColors() {
         val theme = colors
         theme.setBackground(this, ColorType.STRIP_BACKGROUND)
-        for (b in listOf(back, settings, more)) { theme.setColor(b, ColorType.TOOL_BAR_KEY); theme.setBackground(b, ColorType.STRIP_BACKGROUND) }
+        for (b in listOf(back, backRight, settings, more)) { theme.setColor(b, ColorType.TOOL_BAR_KEY); theme.setBackground(b, ColorType.STRIP_BACKGROUND) }
         format.setTextColor(theme.get(ColorType.KEY_TEXT))
         styleSend()
         val keyBackground = theme.get(ColorType.KEY_BACKGROUND)
