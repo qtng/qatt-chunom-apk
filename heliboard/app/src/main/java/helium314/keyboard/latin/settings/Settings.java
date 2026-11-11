@@ -253,6 +253,14 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     private void onCreate(final Context context) {
         mContext = context;
         mPrefs = KtxKt.prefs(context);
+        // QATTKey: once, the settings whose default was changed (number row, language and emoji key, functional hints) go back to the new defaults
+        if (!mPrefs.getBoolean("qatt_defaults_1", false)) {
+            mPrefs.edit()
+                    .remove(PREF_SHOW_NUMBER_ROW).remove(PREF_SHOW_NUMBER_ROW_HINTS)
+                    .remove(PREF_SHOW_LANGUAGE_SWITCH_KEY).remove(PREF_SHOW_EMOJI_KEY).remove(PREF_SHOW_POPUP_HINTS)
+                    .putBoolean("qatt_defaults_1", true)
+                    .apply();
+        }
         mPrefs.registerOnSharedPreferenceChangeListener(this);
     }
 

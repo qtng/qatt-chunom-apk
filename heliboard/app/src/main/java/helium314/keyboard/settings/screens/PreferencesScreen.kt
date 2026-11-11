@@ -44,6 +44,8 @@ fun PreferencesScreen(
     val clipboardHistoryEnabled = prefs.getBoolean(Settings.PREF_ENABLE_CLIPBOARD_HISTORY, Defaults.PREF_ENABLE_CLIPBOARD_HISTORY)
     val items = listOf(
         R.string.settings_category_input,
+        Settings.PREF_AUTO_CAP,
+        Settings.PREF_KEY_USE_DOUBLE_SPACE_PERIOD,
         Settings.PREF_SHOW_HINTS,
         if (prefs.getBoolean(Settings.PREF_SHOW_HINTS, Defaults.PREF_SHOW_HINTS))
             Settings.PREF_POPUP_KEYS_HINT_ORDER else null,
@@ -109,6 +111,12 @@ fun createPreferencesSettings(context: Context) = listOf(
         R.string.show_tld_popup_keys_summary
     ) {
         SwitchPreference(it, Defaults.PREF_SHOW_TLD_POPUP_KEYS) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
+    },
+    Setting(context, Settings.PREF_AUTO_CAP, R.string.auto_cap, R.string.auto_cap_summary) {
+        SwitchPreference(it, Defaults.PREF_AUTO_CAP)
+    },
+    Setting(context, Settings.PREF_KEY_USE_DOUBLE_SPACE_PERIOD, R.string.use_double_space_period, R.string.use_double_space_period_summary) {
+        SwitchPreference(it, Defaults.PREF_KEY_USE_DOUBLE_SPACE_PERIOD)
     },
     Setting(context, Settings.PREF_SHOW_POPUP_HINTS, R.string.show_popup_hints, R.string.show_popup_hints_summary) {
         SwitchPreference(it, Defaults.PREF_SHOW_POPUP_HINTS) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
