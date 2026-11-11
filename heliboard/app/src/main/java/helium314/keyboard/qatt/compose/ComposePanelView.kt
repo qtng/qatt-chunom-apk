@@ -444,7 +444,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
             val top: Int
             val bottom: Int
             if (l == null || text.isEmpty()) {
-                x = paddingLeft.toFloat()
+                x = if (gravity and Gravity.HORIZONTAL_GRAVITY_MASK == Gravity.CENTER_HORIZONTAL) width / 2f else paddingLeft.toFloat()
                 top = paddingTop
                 bottom = paddingTop + lineHeight
             } else {

@@ -320,9 +320,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font && FontStore.isInstalled(ime, font) }
         }
         menu.menu.setGroupCheckable(2, true, true)
-        menu.menu.add(Menu.NONE, 22, 22, ime.getString(R.string.compose_update_font, fonts.family.label, fonts.family.sizeMb, fontState(fonts.family)))
-        menu.menu.add(Menu.NONE, 24, 24, R.string.compose_import_font)
-        if (FontStore.imported(ime, ComposeFont.PEN) != null) menu.menu.add(Menu.NONE, 23, 23, R.string.compose_font_builtin)
+        menu.menu.add(Menu.NONE, 22, 40, ime.getString(R.string.compose_update_font, fonts.family.label, fonts.family.sizeMb, fontState(fonts.family)))
+        menu.menu.add(Menu.NONE, 24, 41, R.string.compose_import_font)
+        if (FontStore.imported(ime, ComposeFont.PEN) != null) menu.menu.add(Menu.NONE, 23, 35, R.string.compose_font_builtin)
         menu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> saveScripts(s, !s.pa, s.qatt, s.nom)
