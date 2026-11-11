@@ -82,16 +82,22 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     private val gridScroll = ScrollView(context)
     private val setupScroll = ScrollView(context)
     private val setupBox = LinearLayout(context).apply { orientation = VERTICAL }
+    private val box = LinearLayout(context)
 
     init {
         orientation = VERTICAL
         visibility = GONE
-        val top = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL }
-        top.addView(settings, LayoutParams(dp(44), dp(44)))
-        top.addView(field, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { setMargins(dp(2), dp(4), dp(2), dp(4)) })
-        top.addView(format, LayoutParams(LayoutParams.WRAP_CONTENT, dp(40)).apply { setMargins(dp(2), 0, dp(2), 0) })
-        top.addView(send, LayoutParams(dp(40), dp(40)).apply { setMargins(dp(4), 0, dp(4), 0) })
-        addView(top, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        // a floating box: the field over the whole width, below it the settings on the left, the format and the send button on the right
+        box.orientation = VERTICAL
+        box.setPadding(dp(10), dp(8), dp(10), dp(8))
+        box.addView(field, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        val buttons = LinearLayout(context).apply { gravity = Gravity.CENTER_VERTICAL }
+        buttons.addView(settings, LayoutParams(dp(40), dp(40)))
+        buttons.addView(android.view.View(context), LayoutParams(0, 1, 1f))
+        buttons.addView(format, LayoutParams(LayoutParams.WRAP_CONTENT, dp(38)).apply { setMargins(dp(2), 0, dp(8), 0) })
+        buttons.addView(send, LayoutParams(dp(44), dp(44)))
+        box.addView(buttons, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) })
+        addView(box, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { setMargins(dp(8), dp(8), dp(8), dp(4)) })
 
         candidateRow.gravity = Gravity.CENTER_VERTICAL
         candidateRow.addView(back, LayoutParams(dp(40), dp(48)))
@@ -210,6 +216,13 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
     /** [selected]: the keys type into the field and the candidates are shown. */
     fun setLook(image: Boolean, style: ImageStyle, selected: Boolean) {
         field.setLook(colors, image, style, selected)
+        // the box: a little lighter than the bar, its border in the accent colour while the field is selected
+        val theme = colors
+        box.background = GradientDrawable().apply {
+            cornerRadius = dp(22).toFloat()
+            setColor((theme.get(ColorType.KEY_BACKGROUND) and 0x00FFFFFF) or 0x99000000.toInt())
+            setStroke(dp(if (selected) 2 else 1), if (selected) theme.get(ColorType.TOOL_BAR_KEY) else (theme.get(ColorType.KEY_HINT_TEXT) and 0x00FFFFFF) or 0x66000000)
+        }
         candidateRow.visibility = if (selected) VISIBLE else GONE
         if (!selected) hideGrid()
     }
@@ -369,8 +382,8 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
         init {
             val dp = context.resources.displayMetrics.density
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-            minHeight = (44 * dp).toInt()
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f)
+            minHeight = (52 * dp).toInt()
             setMaxLines(3)
             setPadding((12 * dp).toInt(), (6 * dp).toInt(), (12 * dp).toInt(), (6 * dp).toInt())
             gravity = Gravity.CENTER_VERTICAL or Gravity.START
@@ -411,17 +424,13 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
         fun setLook(colors: Colors, image: Boolean, style: ImageStyle, selected: Boolean) {
             val dp = resources.displayMetrics.density
-            val accent = colors.get(ColorType.TOOL_BAR_KEY)
-            val border = if (selected) accent else colors.get(ColorType.KEY_HINT_TEXT)
-            val keyFill = colors.get(ColorType.KEY_BACKGROUND)
             val bg = GradientDrawable().apply {
-                cornerRadius = (if (image) 6 else 16) * dp
+                cornerRadius = 12 * dp
                 val end = style.backgroundEnd
                 if (image && end != null) {
                     orientation = GradientDrawable.Orientation.TL_BR
                     setColors(intArrayOf(style.background, end))
-                } else setColor(if (image) style.background else keyFill)
-                setStroke(((if (selected) 2 else 1) * dp).toInt(), border)
+                } else setColor(if (image) style.background else android.graphics.Color.TRANSPARENT)   // Text: the box is the frame
             }
             background = bg
             val fg = if (image) style.foreground else colors.get(ColorType.KEY_TEXT)
