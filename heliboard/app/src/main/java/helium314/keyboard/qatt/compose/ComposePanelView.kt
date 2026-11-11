@@ -121,7 +121,7 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         send.background = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setColor(if (sendReady) 0xFFFF6600.toInt() else (theme.get(ColorType.KEY_TEXT) and 0x00FFFFFF) or 0x22000000)
-            setStroke(dp(1), if (sendReady) theme.get(ColorType.KEY_HINT_TEXT) else Color.TRANSPARENT)
+            setStroke(dp(2), if (sendReady) theme.get(ColorType.TOOL_BAR_KEY) else Color.TRANSPARENT)
         }
         send.setColorFilter(if (sendReady) 0xFFFFFFFF.toInt() else (theme.get(ColorType.KEY_TEXT) and 0x00FFFFFF) or 0x66000000)
         send.isEnabled = sendReady

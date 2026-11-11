@@ -46,4 +46,5 @@
     <string name="compose_setup_ok">OK</string>
     <string name="compose_icon_note_alt">Icon: note</string>
     <string name="compose_icon_bubble">Icon: speech bubble</string>
+    <string name="compose_icon_nom">Icon: 喃 in a ring</string>
 </resources>

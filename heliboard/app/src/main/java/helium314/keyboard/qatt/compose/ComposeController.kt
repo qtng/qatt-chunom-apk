@@ -320,8 +320,8 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font && FontStore.isInstalled(ime, font) }
         }
         menu.menu.setGroupCheckable(2, true, true)
-        val icon = prefs.getString(PREF_ICON, "note_alt")
-        val icons = listOf("note_alt" to R.string.compose_icon_note_alt, "bubble" to R.string.compose_icon_bubble)
+        val icon = prefs.getString(PREF_ICON, "nom")
+        val icons = listOf("nom" to R.string.compose_icon_nom, "note_alt" to R.string.compose_icon_note_alt, "bubble" to R.string.compose_icon_bubble)
         icons.forEachIndexed { i, (id, label) -> menu.menu.add(3, 50 + i, 34, label).apply { isCheckable = true; isChecked = icon == id } }
         menu.menu.setGroupCheckable(3, true, true)
         menu.menu.add(Menu.NONE, 22, 40, ime.getString(R.string.compose_update_font, fonts.family.label, fonts.family.sizeMb, fontState(fonts.family)))
@@ -334,7 +334,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
                 3 -> saveScripts(s, s.pa, s.qatt, !s.nom)
                 in 10..12 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
                 in 30..32 -> chooseFont(ComposeFont.values()[item.itemId - 30])
-                in 50..52 -> {
+                in 50..53 -> {
                     prefs.edit { putString(PREF_ICON, icons[item.itemId - 50].first) }
                     helium314.keyboard.keyboard.internal.KeyboardIconsSet.needsReload = true
                     helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().reloadKeyboard()
