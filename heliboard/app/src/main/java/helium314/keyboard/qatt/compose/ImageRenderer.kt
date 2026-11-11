@@ -23,7 +23,7 @@ import kotlin.math.ceil
  * Draws the text of the field as an image (the colours of an [ImageStyle]) and gives it a content address for `commitContent`.
  *
  * Normally ([square] false) the text fills the image with the lines that the field shows (its own line breaks and those of the user, no others), [FREE_PAD]
- * pixels around it, centred both ways; the image is at most [FREE_ASPECT] times as wide as it is high (it gets higher if the text alone is wider); a text of fewer
+ * pixels above and below it and 1 em at the sides, centred both ways; the image is at most [FREE_ASPECT] times as wide as it is high (it gets higher if the text alone is wider); a text of fewer
  * than [SHORT_TEXT] characters is at least [SHORT_ASPECT] times as wide (it gets wider). An image higher
  * than [MAX_HEIGHT] is scaled down to it (a very long text gets small instead of an image of a million pixels).
  *
@@ -48,9 +48,9 @@ object ImageRenderer {
 
     private const val FREE_SIZE = 96f          // pixels: the text size of the normal image
     private const val MAX_HEIGHT = 3000       // pixels
-    private const val FREE_PAD = 16
+    private const val FREE_PAD = 16            // above and below; at the sides 1 em (the text size)
     private const val SHORT_TEXT = 10           // a text of fewer characters is at least SHORT_ASPECT : 1
-    private const val SHORT_ASPECT = 2.5f
+    private const val SHORT_ASPECT = 3f
     private const val FREE_ASPECT = 3f
 
     /** The apps that crop an image to a small square: they get the square layout. More are added when they become known. */
@@ -113,7 +113,7 @@ object ImageRenderer {
         val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER, (size + LINE_GAP) / fontLine)
         val height0 = layout.height + 2 * FREE_PAD
         val characters = clean.sumOf { line -> Cells.split(line).count { it.isNotBlank() } }
-        val width = maxOf(blockWidth + 2 * FREE_PAD, if (characters < SHORT_TEXT) ceil(height0 * SHORT_ASPECT).toInt() else 0)
+        val width = maxOf(blockWidth + 2 * ceil(size).toInt(), if (characters < SHORT_TEXT) ceil(height0 * SHORT_ASPECT).toInt() else 0)
         val height = maxOf(height0, ceil(width / FREE_ASPECT).toInt())
         val scale = minOf(1f, MAX_HEIGHT.toFloat() / height)
         return draw(layout, blockWidth, width, height, style, scale)
