@@ -30,7 +30,7 @@ object ImageRenderer {
     private const val TEXT_SIZE = 72f          // pixels
     private const val PER_LINE = 5
     private const val ASPECT = 2.5f
-    private const val PADDING = 40
+    private const val PADDING = 12
     private const val FOLDER = "compose"
 
     /** The cells of [text]: a QATT or PA cell with its joiners and tone marks, else one character. */
