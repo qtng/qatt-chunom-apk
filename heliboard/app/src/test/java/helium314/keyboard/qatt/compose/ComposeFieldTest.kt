@@ -28,6 +28,19 @@ class ComposeFieldTest {
         assertEquals("người Việt", f.text.replace("  ", " "))
     }
 
+    @Test fun withoutTelexLettersAndSpaceStayAsTheyAre() {
+        val f = field(ComposeSettings(space = SpaceMode.NOM))
+        f.telex = false
+        f.type("chuws")
+        assertEquals("chuws", f.text)
+        f.telex = true
+        f.clear(); f.telex = false
+        f.type("chu"); f.space()
+        assertEquals("chu ", f.text)                                 // no conversion at the space
+        f.clear(); f.type("chu")
+        assertTrue(f.allCandidates().isNotEmpty())                     // but the candidates are there, a tap converts
+    }
+
     @Test fun candidatesInTheOrderPaQattNom() {
         val f = field()
         f.type("nguwowif")

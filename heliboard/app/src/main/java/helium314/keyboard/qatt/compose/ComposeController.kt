@@ -26,6 +26,11 @@ import helium314.keyboard.latin.R
 import helium314.keyboard.latin.utils.ToolbarKey
 import helium314.keyboard.latin.utils.addPinnedKey
 import helium314.keyboard.latin.utils.prefs
+import helium314.keyboard.latin.RichInputMethodManager
+import helium314.keyboard.latin.utils.SubtypeSettings
+import helium314.keyboard.latin.utils.locale
+import android.view.inputmethod.InputMethodSubtype
+import java.util.Locale
 import helium314.keyboard.qatt.NomDictionary
 import helium314.keyboard.qatt.VietnameseParser
 
@@ -115,7 +120,30 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     fun toggle() { if (active) close() else open() }
 
+    // ---------- the language of the keyboard: Vietnamese while the field is open, the language from before when it closes ----------
+
+    /** The language the keyboard had before the field switched it to Vietnamese (null: it was Vietnamese already, nothing to give back). */
+    private var languageBefore: InputMethodSubtype? = null
+
+    private fun isVietnamese() = try { RichInputMethodManager.getInstance().currentSubtypeLocale.language == "vi" } catch (_: Exception) { true }
+
+    private fun switchToVietnamese() = guarded("language") {
+        if (isVietnamese()) return@guarded
+        val vi = SubtypeSettings.getEnabledSubtypes(false).firstOrNull { it.locale().language == "vi" }
+            ?: SubtypeSettings.getResourceSubtypesForLocale(Locale.forLanguageTag("vi")).firstOrNull()
+            ?: return@guarded
+        languageBefore = RichInputMethodManager.getInstance().currentSubtype.rawSubtype
+        ime.switchToSubtype(vi)
+    }
+
+    private fun restoreLanguage() = guarded("language") {
+        val before = languageBefore ?: return@guarded
+        languageBefore = null
+        ime.switchToSubtype(before)
+    }
+
     private fun open() {
+        switchToVietnamese()
         setupPending = !prefs.getBoolean(PREF_SETUP_DONE, false)
         if (setupPending) setupScripts.fill(false)
         active = true
@@ -130,6 +158,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         selected = false
         expanded = false
         refresh()
+        restoreLanguage()
     }
 
     /** Closes the field without losing its text (the user tapped into the app): the keyboard is normal again, the pencil opens the field with the text. */
@@ -138,6 +167,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         selected = false
         expanded = false
         refresh()
+        restoreLanguage()
     }
 
     private fun select() { selected = true; ignoreSelectionUntil = System.currentTimeMillis() + 600; refresh() }
@@ -154,6 +184,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (!active || !selected || setupPending) return false
         expanded = false
         val f = field
+        f.telex = isVietnamese()
         when {
             event.keyCode == KeyCode.DELETE -> if (f.isEmpty) { swallowRepeats = true; close(); return true } else f.backspace()
             event.keyCode == KeyCode.ARROW_LEFT -> f.moveLeft()
@@ -174,6 +205,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     fun onTextInput(text: String?): Boolean {
         if (!active || !selected || text == null) return false
         expanded = false
+        field.telex = isVietnamese()
         field.type(text)
         refresh()
         return true

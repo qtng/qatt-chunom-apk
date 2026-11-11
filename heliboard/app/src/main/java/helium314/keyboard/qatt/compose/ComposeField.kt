@@ -73,8 +73,11 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
     }
 
     /** A key of the keyboard: a letter goes into the word (Telex), anything else is written as it is. */
+    /** Telex is on while the keyboard is Vietnamese; in another language the letters go in as they are and Space is a plain space (the candidates stay). */
+    var telex = true
+
     fun type(codePoint: Int) {
-        if (Character.isLetter(codePoint) && !Cells.isGlyph(codePoint)) {
+        if (telex && Character.isLetter(codePoint) && !Cells.isGlyph(codePoint)) {
             val key = String(Character.toChars(codePoint))
             val start = maxOf(0, cursor - WINDOW)
             val window = sb.substring(start, cursor)
@@ -96,7 +99,7 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
     /** Space: see [SpaceMode]. */
     fun space() {
         val w = word
-        if (w.isNotEmpty() && !insideWord) {
+        if (telex && w.isNotEmpty() && !insideWord) {
             val converted = when (settings.space) {
                 SpaceMode.NONE -> null
                 SpaceMode.PA -> PaText.word(w, parser)
