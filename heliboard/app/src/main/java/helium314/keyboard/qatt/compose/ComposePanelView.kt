@@ -180,12 +180,21 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
     /**
      * The text of the field with its fonts and the [cursor] in it; [composingStart] on: the word being typed (up to the cursor), underlined. With [image] the field shows the
-     * text as the image will set it: the same lines (see [ImageRenderer.lines]), centred, so that the result can be seen while typing.
+     * text centred, so that the result can be seen while typing; with [square] (an app that crops to a square) in the lines of [ImageRenderer.lines], else in the
+     * lines of the field itself, which the image takes over (see [fieldLines]).
      */
+    /** The lines as the field shows them: its own line breaks and those of the user. */
+    fun fieldLines(): List<String>? {
+        val l = field.layout ?: return null
+        val t = field.text.toString()
+        if (t != originalText) return null
+        return (0 until l.lineCount).map { t.substring(l.getLineStart(it), l.getLineEnd(it)).trimEnd('\n') }
+    }
+
     fun setContent(text: String, composingStart: Int, cursor: Int, image: Boolean = false, square: Boolean = false) {
         // the empty lines after Enter are kept (the image drops them, but the cursor must be seen on the new line)
         val newlines = text.takeLastWhile { it == '\n' || it == ' ' }.count { it == '\n' }
-        val shown = if (image) ImageRenderer.lines(text, square).joinToString("\n") + "\n".repeat(newlines) else text
+        val shown = if (image && square) ImageRenderer.lines(text, square).joinToString("\n") + "\n".repeat(newlines) else text
         originalText = text
         shownText = shown
         val styled = fonts.styled(shown)

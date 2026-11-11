@@ -256,7 +256,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     private fun sendImage(text: String, style: ImageStyle): Boolean = try {
         val editorInfo = ime.currentInputEditorInfo ?: return false
-        val bitmap = ImageRenderer.render(fonts, text, style, ImageRenderer.isSquareApp(packageName))
+        val bitmap = ImageRenderer.render(fonts, text, style, ImageRenderer.isSquareApp(packageName), panel?.fieldLines())
         val uri = ImageRenderer.save(ime, bitmap, ime.getString(R.string.qatt_compose_provider_authority))
         val info = InputContentInfoCompat(uri, ClipDescription("QATT", arrayOf("image/png")), null)
         ime.inputLogic.mConnection.commitContent(info, editorInfo)
