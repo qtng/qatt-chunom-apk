@@ -41,27 +41,8 @@ object ImageRenderer {
     private const val LINE_GAP = 4f            // the distance between two lines is the character height (the text size) plus this, in pixels
     private const val FOLDER = "compose"
 
-    /** The lines: at most [perLine] cells each, broken between words where it can be, else inside a long word. */
-    fun wrap(text: String, perLine: Int): List<String> {
-        val lines = ArrayList<String>()
-        for (paragraph in text.trimEnd().split('\n')) {
-            var line = ArrayList<String>()
-            fun flush() { lines.add(line.joinToString("")); line = ArrayList() }
-            for (word in paragraph.split(' ').filter { it.isNotEmpty() }) {
-                val w = Cells.split(word)
-                if (w.size > perLine) {                      // a long word: start on a new line, then chunks
-                    if (line.isNotEmpty()) flush()
-                    w.chunked(perLine).forEach { chunk -> line = ArrayList(chunk); flush() }
-                    continue
-                }
-                if (line.isNotEmpty() && line.size + 1 + w.size > perLine) flush()
-                if (line.isNotEmpty()) line.add(" ")
-                line.addAll(w)
-            }
-            flush()
-        }
-        return lines
-    }
+    /** The lines: at most [perLine] cells each (see [LineWrap]). */
+    fun wrap(text: String, perLine: Int): List<String> = LineWrap.wrap(text, perLine)
 
     /** The lines and their number L: the smallest L for which the text wraps into at most L lines of at most 5 + L characters. */
     fun lines(text: String): List<String> {
