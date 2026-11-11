@@ -112,12 +112,6 @@ fun createPreferencesSettings(context: Context) = listOf(
     ) {
         SwitchPreference(it, Defaults.PREF_SHOW_TLD_POPUP_KEYS) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     },
-    Setting(context, Settings.PREF_AUTO_CAP, R.string.auto_cap, R.string.auto_cap_summary) {
-        SwitchPreference(it, Defaults.PREF_AUTO_CAP)
-    },
-    Setting(context, Settings.PREF_KEY_USE_DOUBLE_SPACE_PERIOD, R.string.use_double_space_period, R.string.use_double_space_period_summary) {
-        SwitchPreference(it, Defaults.PREF_KEY_USE_DOUBLE_SPACE_PERIOD)
-    },
     Setting(context, Settings.PREF_SHOW_POPUP_HINTS, R.string.show_popup_hints, R.string.show_popup_hints_summary) {
         SwitchPreference(it, Defaults.PREF_SHOW_POPUP_HINTS) { KeyboardSwitcher.getInstance().setThemeNeedsReload() }
     },
