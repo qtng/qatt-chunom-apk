@@ -93,13 +93,13 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (active) refresh()
     }
 
-    /** The cursor of the app moved. If the user did that (not our own sending) while the field was selected, the keys go to the app again. */
+    /** The cursor of the app moved. If the user did that (not our own sending) while the field was open, the field closes (its text is kept for the next time). */
     fun onAppSelectionChanged(newSelStart: Int, newSelEnd: Int) {
         val moved = newSelStart != lastSelStart || newSelEnd != lastSelEnd
         val known = lastSelStart >= 0
         lastSelStart = newSelStart; lastSelEnd = newSelEnd
         // only a real move of the cursor (a tap into the app) counts, not a repeated report (e.g. after the panel changed the size of the window)
-        if (active && selected && known && moved && System.currentTimeMillis() > ignoreSelectionUntil) deselect()
+        if (active && selected && known && moved && System.currentTimeMillis() > ignoreSelectionUntil) hide()
     }
 
     fun toggle() { if (active) close() else open() }
@@ -113,6 +113,14 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     private fun close() {
         if (fieldHolder.isInitialized()) field.clear()
+        active = false
+        selected = false
+        expanded = false
+        refresh()
+    }
+
+    /** Closes the field without losing its text (the user tapped into the app): the keyboard is normal again, the pencil opens the field with the text. */
+    private fun hide() {
         active = false
         selected = false
         expanded = false
@@ -177,8 +185,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE) sent = sendImage(text, choice.style)
         if (!sent) connection.commitText(text, 1)
         ignoreSelectionUntil = System.currentTimeMillis() + 800
-        field.clear()
-        refresh()
+        close()                         // the field is gone and the keyboard is normal again
     }
 
     private fun sendImage(text: String, style: ImageStyle): Boolean = try {
