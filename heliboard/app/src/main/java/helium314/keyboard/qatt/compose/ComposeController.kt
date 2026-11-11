@@ -161,6 +161,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     }
 
     private fun open() {
+        luckyStyle = null                                    // Lucky draw draws again
         switchToVietnamese()
         setupPending = !prefs.getBoolean(PREF_SETUP_DONE, false)
         if (setupPending) setupScripts.fill(false)
@@ -299,7 +300,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val choice = currentChoice()
         val connection = ime.inputLogic.mConnection
         var sent = false
-        if (SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE) sent = sendImage(text, choice.style)
+        if (SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE) sent = sendImage(text, styleOf(choice))
         if (!sent) connection.commitText(text, 1)
         ignoreSelectionUntil = System.currentTimeMillis() + 800
         close()                         // the field is gone and the keyboard is normal again
@@ -334,7 +335,12 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
                 row.text = (if (c == current) "✓  " else "     ") + longLabel(c)
                 row.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                 row.setPadding((16 * density).toInt(), (12 * density).toInt(), (16 * density).toInt(), (12 * density).toInt())
-                if (c.format == SendFormat.IMAGE) {          // the row shows the colours of its style
+                row.setShadowLayer(0f, 0f, 0f, 0)
+                if (c.lucky) {                               // Lucky draw: stripes in the colours of all its styles
+                    row.setTextColor(0xFFFFFFFF.toInt())
+                    row.setShadowLayer(3 * density, 0f, density, 0x99000000.toInt())
+                    row.background = StripesDrawable(ImageStyle.LUCKY_POOL.map { if (it.isGradient) it.background else it.foreground }, 14 * density)
+                } else if (c.format == SendFormat.IMAGE) {   // the row shows the colours of its style
                     row.setTextColor(c.style.foreground)
                     row.background = GradientDrawable().apply {
                         val end = c.style.backgroundEnd
@@ -352,6 +358,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         })
         popup.setOnItemClickListener { _, _, position, _ ->
             packageName?.let { choices[it] = SendChoice.ALL[position]; prefs.edit { putString(PREF_CHOICES, choices.serialize()) } }
+            if (SendChoice.ALL[position].lucky) drawLucky()          // chosen now: a style at once
             popup.dismiss()
             refresh()
         }
@@ -447,7 +454,19 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         return SendFormatPolicy.selected(choices[packageName], chatApp, acceptsImages, shows)
     }
 
-    private fun longLabel(c: SendChoice) = ime.getString(if (c.format == SendFormat.TEXT) R.string.compose_format_text else when (c.style) {
+    // ---------- Lucky draw: a coloured style by chance, drawn anew every time the field opens ----------
+
+    private var luckyStyle: ImageStyle? = null
+
+    private fun drawLucky(): ImageStyle {
+        val last = prefs.getString(PREF_LUCKY_LAST, null)?.let { n -> ImageStyle.values().firstOrNull { it.name == n } }
+        return ImageStyle.drawLucky(last).also { luckyStyle = it; prefs.edit { putString(PREF_LUCKY_LAST, it.name) } }
+    }
+
+    /** The style an Image is drawn in: the chosen one, for Lucky draw the one drawn this time. */
+    private fun styleOf(c: SendChoice): ImageStyle = if (c.lucky) luckyStyle ?: drawLucky() else c.style
+
+    private fun longLabel(c: SendChoice) = ime.getString(if (c.format == SendFormat.TEXT) R.string.compose_format_text else if (c.lucky) R.string.compose_style_lucky else when (c.style) {
         ImageStyle.BLACK_ON_WHITE -> R.string.compose_format_image_bw
         ImageStyle.WHITE_ON_BLACK -> R.string.compose_format_image_wb
         ImageStyle.INK_ON_RICE_PAPER -> R.string.compose_style_ink_on_rice_paper
@@ -478,7 +497,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         // where the field accepts no images the text is sent: the field looks like Text then, whatever was chosen
         val image = SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE
         p.setContent(f.text, f.composingStart, f.cursor, image, ImageRenderer.isSquareApp(packageName))
-        p.setLook(image, choice.style, selected)
+        p.setLook(image, styleOf(choice), selected)
         p.setFormatLabel(ime.getString(if (!image) R.string.compose_format_text else R.string.compose_format_image))
         p.setSendReady(f.text.isNotBlank())
         val all = if (selected) f.allCandidates() else emptyList()
@@ -548,6 +567,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         private const val PREF_USAGE = "qatt_compose_usage"
         private const val PREF_FONT = "qatt_compose_font"
         private const val PREF_ICON = "qatt_compose_icon"
+        private const val PREF_LUCKY_LAST = "qatt_compose_lucky_last"
         private const val MAX_USAGE = 1000
     }
 }

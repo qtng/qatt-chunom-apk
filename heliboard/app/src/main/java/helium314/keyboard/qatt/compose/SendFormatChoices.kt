@@ -27,12 +27,15 @@ class SendFormatChoices(private val limit: Int = 200) {
 
     fun clear() = choices.clear()
 
-    /** "package=TEXT" or "package=IMAGE:WHITE_ON_BLACK" per line. */
-    fun serialize(): String = choices.entries.joinToString("\n") { (k, v) -> "$k=" + if (v.format == SendFormat.TEXT) "TEXT" else "IMAGE:${v.style.name}" }
+    /** "package=TEXT", "package=IMAGE:WHITE_ON_BLACK" or "package=IMAGE:LUCKY" per line. */
+    fun serialize(): String = choices.entries.joinToString("\n") { (k, v) ->
+        "$k=" + when { v.format == SendFormat.TEXT -> "TEXT"; v.lucky -> "IMAGE:$LUCKY"; else -> "IMAGE:${v.style.name}" }
+    }
 
     companion object {
         /** Styles that were replaced: a stored choice of the old one is the new one. */
         private val RENAMED = mapOf("RED_ON_CREAM" to "MOSS_GRADIENT")
+        private const val LUCKY = "LUCKY"
 
         fun deserialize(s: String?, limit: Int = 200): SendFormatChoices {
             val c = SendFormatChoices(limit)
@@ -41,6 +44,7 @@ class SendFormatChoices(private val limit: Int = 200) {
                 if (i <= 0) continue
                 val value = line.substring(i + 1).split(':')
                 val format = SendFormat.values().firstOrNull { it.name == value[0] } ?: continue
+                if (format == SendFormat.IMAGE && value.getOrNull(1) == LUCKY) { c[line.substring(0, i)] = SendChoice.LUCKY; continue }
                 val style = value.getOrNull(1)?.let { RENAMED[it] ?: it }?.let { n -> ImageStyle.values().firstOrNull { it.name == n } } ?: ImageStyle.BLACK_ON_WHITE
                 c[line.substring(0, i)] = SendChoice(format, style)
             }

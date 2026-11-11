@@ -19,6 +19,15 @@ enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEn
     OCEAN_GRADIENT(0xFFFFFFFF.toInt(), 0xFF1FA2A6.toInt(), 0xFF1F4E9C.toInt());
 
     val isGradient get() = backgroundEnd != null
+
+    companion object {
+        /** The styles of Lucky draw: the coloured ones (the surprise lives on the colours). */
+        val LUCKY_POOL = listOf(GOLD_ON_DARK, MOSS_GRADIENT, PINK_GRADIENT, SUNSET_GRADIENT, OCEAN_GRADIENT)
+
+        /** A style of [LUCKY_POOL] drawn by chance, never [last] again (two times the same in a row would look broken). */
+        fun drawLucky(last: ImageStyle?, random: kotlin.random.Random = kotlin.random.Random.Default): ImageStyle =
+            LUCKY_POOL.filter { it != last }.random(random)
+    }
 }
 
 /**
@@ -33,13 +42,14 @@ enum class ComposeFont(val label: String, val file: String, val pa: String, val 
     val downloadName get() = file
 }
 
-/** What the selector shows: Text, or an Image in a style. */
-data class SendChoice(val format: SendFormat, val style: ImageStyle = ImageStyle.BLACK_ON_WHITE) {
+/** What the selector shows: Text, or an Image in a style, or an Image in a style drawn by chance every time the field opens ([lucky], "Lucky draw"). */
+data class SendChoice(val format: SendFormat, val style: ImageStyle = ImageStyle.BLACK_ON_WHITE, val lucky: Boolean = false) {
     companion object {
         val TEXT = SendChoice(SendFormat.TEXT)
         val IMAGE = SendChoice(SendFormat.IMAGE)
-        /** The entries of the dropdown, in this order: an Image in each style (rice paper, the "classic" one, last), Text last. */
-        val ALL = (ImageStyle.values().filter { it != ImageStyle.INK_ON_RICE_PAPER } + ImageStyle.INK_ON_RICE_PAPER).map { SendChoice(SendFormat.IMAGE, it) } + TEXT
+        val LUCKY = SendChoice(SendFormat.IMAGE, lucky = true)
+        /** The entries of the dropdown, in this order: an Image in each style (rice paper, the "classic" one, last), Lucky draw, Text last. */
+        val ALL = (ImageStyle.values().filter { it != ImageStyle.INK_ON_RICE_PAPER } + ImageStyle.INK_ON_RICE_PAPER).map { SendChoice(SendFormat.IMAGE, it) } + LUCKY + TEXT
     }
 }
 

@@ -102,6 +102,21 @@ class SendFormatTest {
         assertEquals(0, c.size)
     }
 
+    @Test fun luckyDraw() {
+        val c = SendFormatChoices()
+        c["pkg"] = SendChoice.LUCKY
+        assertEquals(SendChoice.LUCKY, SendFormatChoices.deserialize(c.serialize())["pkg"])
+        // a coloured style, never the same twice in a row
+        var last: ImageStyle? = null
+        val random = kotlin.random.Random(1)
+        repeat(200) {
+            val s = ImageStyle.drawLucky(last, random)
+            assertTrue(s in ImageStyle.LUCKY_POOL)
+            assertTrue(s != last)
+            last = s
+        }
+    }
+
     @Test fun choicesKeepTheMostRecentApps() {
         val c = SendFormatChoices(limit = 3)
         for (i in 1..4) c["app$i"] = SendChoice.TEXT
@@ -112,14 +127,15 @@ class SendFormatTest {
     }
 
     @Test fun selectorEntriesAndStyles() {
-        assertEquals(1 + ImageStyle.values().size, SendChoice.ALL.size)
-        assertEquals(SendChoice.TEXT, SendChoice.ALL[0])
-        assertEquals(ImageStyle.BLACK_ON_WHITE, SendChoice.ALL[1].style)         // the order of the first entries is kept
-        assertEquals(ImageStyle.WHITE_ON_BLACK, SendChoice.ALL[2].style)
-        assertEquals(ImageStyle.INK_ON_RICE_PAPER, SendChoice.ALL[3].style)       // black ink on rice paper comes right after the two plain ones
+        assertEquals(2 + ImageStyle.values().size, SendChoice.ALL.size)
+        assertEquals(SendChoice.TEXT, SendChoice.ALL.last())                     // Text last, Lucky draw right above it, Classic (rice paper) above that
+        assertEquals(SendChoice.LUCKY, SendChoice.ALL[SendChoice.ALL.size - 2])
+        assertEquals(ImageStyle.INK_ON_RICE_PAPER, SendChoice.ALL[SendChoice.ALL.size - 3].style)
+        assertEquals(ImageStyle.BLACK_ON_WHITE, SendChoice.ALL[0].style)         // the order of the first entries is kept
+        assertEquals(ImageStyle.WHITE_ON_BLACK, SendChoice.ALL[1].style)
         assertEquals(0xFF1B1B1B.toInt(), ImageStyle.INK_ON_RICE_PAPER.foreground)
         assertFalse(ImageStyle.INK_ON_RICE_PAPER.isGradient)
-        assertTrue(SendChoice.ALL.drop(1).all { it.format == SendFormat.IMAGE })
+        assertTrue(SendChoice.ALL.dropLast(1).all { it.format == SendFormat.IMAGE })
         assertEquals(0xFF000000.toInt(), ImageStyle.BLACK_ON_WHITE.foreground)
         assertEquals(0xFFFFFFFF.toInt(), ImageStyle.BLACK_ON_WHITE.background)
         assertEquals(ImageStyle.BLACK_ON_WHITE.foreground, ImageStyle.WHITE_ON_BLACK.background)
