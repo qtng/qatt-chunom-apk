@@ -68,6 +68,11 @@ fun MainSettingsScreen(
                     icon = R.drawable.ic_settings_appearance
                 ) { NextScreenIcon() }
                 Preference(
+                    name = stringResource(R.string.dictionary_settings_category),
+                    onClick = onClickDictionaries,
+                    icon = R.drawable.ic_dictionary
+                ) { NextScreenIcon() }
+                Preference(
                     name = stringResource(R.string.settings_screen_about),
                     onClick = onClickAbout,
                     icon = R.drawable.ic_settings_about
