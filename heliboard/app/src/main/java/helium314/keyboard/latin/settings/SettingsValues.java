@@ -371,6 +371,8 @@ public class SettingsValues {
     }
 
     public boolean isLanguageSwitchKeyEnabled() {
+        // the composition field switches between Vietnamese and the language from before: its globe key is always there
+        if (helium314.keyboard.qatt.compose.ComposeController.getFieldLanguageKey()) return true;
         if (!mShowsLanguageSwitchKey) {
             return false;
         }

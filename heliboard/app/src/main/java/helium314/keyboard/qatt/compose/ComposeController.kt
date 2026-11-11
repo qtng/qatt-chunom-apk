@@ -122,24 +122,42 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     // ---------- the language of the keyboard: Vietnamese while the field is open, the language from before when it closes ----------
 
-    /** The language the keyboard had before the field switched it to Vietnamese (null: it was Vietnamese already, nothing to give back). */
+    /** The language the keyboard had when the field opened: it comes back when the field closes. */
     private var languageBefore: InputMethodSubtype? = null
+    /** The other language of the globe key in the field: the one from before, or (if that was Vietnamese) another one; Vietnamese is the first. */
+    private var otherLanguage: InputMethodSubtype? = null
 
     private fun isVietnamese() = try { RichInputMethodManager.getInstance().currentSubtypeLocale.language == "vi" } catch (_: Exception) { true }
 
-    private fun switchToVietnamese() = guarded("language") {
-        if (isVietnamese()) return@guarded
-        val vi = SubtypeSettings.getEnabledSubtypes(false).firstOrNull { it.locale().language == "vi" }
+    private fun vietnameseSubtype(): InputMethodSubtype? =
+        SubtypeSettings.getEnabledSubtypes(false).firstOrNull { it.locale().language == "vi" }
             ?: SubtypeSettings.getResourceSubtypesForLocale(Locale.forLanguageTag("vi")).firstOrNull()
-            ?: return@guarded
-        languageBefore = RichInputMethodManager.getInstance().currentSubtype.rawSubtype
-        ime.switchToSubtype(vi)
+
+    private fun switchToVietnamese() = guarded("language") {
+        val current = RichInputMethodManager.getInstance().currentSubtype.rawSubtype
+        languageBefore = current
+        otherLanguage = if (!isVietnamese()) current
+            else SubtypeSettings.getEnabledSubtypes(false).firstOrNull { it.locale().language != "vi" }
+                ?: SubtypeSettings.getResourceSubtypesForLocale(Locale.US).firstOrNull()
+        fieldLanguageKey = true                               // the globe key is on the keyboard while the field is open, also with only one language
+        val vi = vietnameseSubtype()
+        if (!isVietnamese() && vi != null) ime.switchToSubtype(vi)
+        else helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().reloadKeyboard()
+    }
+
+    /** The globe key in the field: Vietnamese and the other language, back and forth. */
+    private fun toggleLanguage() = guarded("language") {
+        val target = if (isVietnamese()) otherLanguage else vietnameseSubtype()
+        if (target != null) ime.switchToSubtype(target)
     }
 
     private fun restoreLanguage() = guarded("language") {
-        val before = languageBefore ?: return@guarded
-        languageBefore = null
-        ime.switchToSubtype(before)
+        if (!fieldLanguageKey) return@guarded
+        fieldLanguageKey = false
+        val before = languageBefore
+        languageBefore = null; otherLanguage = null
+        if (before != null && before != RichInputMethodManager.getInstance().currentSubtype.rawSubtype) ime.switchToSubtype(before)
+        else helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().reloadKeyboard()
     }
 
     private fun open() {
@@ -191,6 +209,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             event.keyCode == KeyCode.ARROW_RIGHT -> f.moveRight()
             event.keyCode == KeyCode.MOVE_START_OF_LINE || event.keyCode == KeyCode.MOVE_START_OF_PAGE -> f.moveToStart()
             event.keyCode == KeyCode.MOVE_END_OF_LINE || event.keyCode == KeyCode.MOVE_END_OF_PAGE -> f.moveToEnd()
+            event.keyCode == KeyCode.LANGUAGE_SWITCH -> { toggleLanguage(); return true }
             event.keyCode == KeyCode.ARROW_UP || event.keyCode == KeyCode.ARROW_DOWN -> {}      // no lines to move between yet; the app must not move
             event.isFunctionalKeyEvent || event.codePoint < 0 -> return false      // Shift, the switches of the keyboard, …
             event.codePoint == '\n'.code -> f.enter()
@@ -516,6 +535,9 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     }
 
     companion object {
+        /** True while the field is open: the keyboard shows the globe key (see SettingsValues.isLanguageSwitchKeyEnabled). */
+        @JvmStatic var fieldLanguageKey = false
+
         private const val PREF_CHOICES = "qatt_compose_send_choices"
         private const val PREF_SETUP_DONE = "qatt_compose_setup_done"
         private const val PREF_NOM = "qatt_compose_nom"
