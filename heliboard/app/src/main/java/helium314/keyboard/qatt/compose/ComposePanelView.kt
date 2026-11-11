@@ -122,10 +122,21 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
         for (c in cells) c.applyColors(theme)
     }
 
-    /** The text of the field with its fonts; [composingStart] on: the word being typed, underlined. */
-    fun setContent(text: String, composingStart: Int) {
-        val styled = fonts.styled(text)
-        if (composingStart < text.length) styled.setSpan(UnderlineSpan(), composingStart, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    /**
+     * The text of the field with its fonts; [composingStart] on: the word being typed, underlined. With [image] the field shows the text as the image will set it:
+     * the same lines (at most 5 + L characters a line, see [ImageRenderer.lines]), centred, so that the result can be seen while typing.
+     */
+    fun setContent(text: String, composingStart: Int, image: Boolean = false) {
+        val shown = if (image) ImageRenderer.lines(text).joinToString("\n") else text
+        val styled = fonts.styled(shown)
+        val typed = text.length - composingStart                      // characters of the word being typed
+        if (typed > 0) {
+            var start = shown.length
+            var left = typed
+            while (start > 0 && left > 0) { start--; if (shown[start] != '\n') left-- }
+            styled.setSpan(UnderlineSpan(), start, shown.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        field.gravity = if (image) Gravity.CENTER else Gravity.CENTER_VERTICAL or Gravity.START
         field.setStyledText(styled)
     }
 

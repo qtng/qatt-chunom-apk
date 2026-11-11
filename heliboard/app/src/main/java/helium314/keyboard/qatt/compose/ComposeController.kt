@@ -315,7 +315,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         val f = field
         fonts.family = ComposeFont.values().firstOrNull { it.name == prefs.getString(PREF_FONT, "") } ?: fonts.family
         val choice = currentChoice()
-        p.setContent(f.text, f.composingStart)
+        p.setContent(f.text, f.composingStart, SendFormatPolicy.effective(choice.format, acceptsImages) == SendFormat.IMAGE)
         p.setLook(choice.format == SendFormat.IMAGE, choice.style, selected)
         p.setFormatLabel(ime.getString(if (choice.format == SendFormat.TEXT) R.string.compose_format_text else R.string.compose_format_image))
         val all = if (selected) f.allCandidates() else emptyList()
