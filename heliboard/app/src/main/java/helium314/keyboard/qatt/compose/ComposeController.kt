@@ -63,6 +63,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private var chatApp = false
     private var acceptsImages = false
     private var ignoreSelectionUntil = 0L
+    private var swallowRepeats = false      // Backspace closed the field: the repeats of that key press are ignored
     private var lastSelStart = -1
     private var lastSelEnd = -1
 
@@ -141,11 +142,15 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     /** A key of the keyboard. Returns true if the field took it (then the app does not get it). */
     fun onEvent(event: Event): Boolean {
+        // a held Backspace that closed the field must stop there: its repeats are not for the app (a new press is)
+        if (event.keyCode == KeyCode.DELETE) {
+            if (swallowRepeats && !active) { if (event.isKeyRepeat) return true else swallowRepeats = false }
+        } else swallowRepeats = false
         if (!active || !selected) return false
         expanded = false
         val f = field
         when {
-            event.keyCode == KeyCode.DELETE -> if (f.isEmpty) { close(); return true } else f.backspace()
+            event.keyCode == KeyCode.DELETE -> if (f.isEmpty) { swallowRepeats = true; close(); return true } else f.backspace()
             event.isFunctionalKeyEvent || event.codePoint < 0 -> return false      // Shift, the switches of the keyboard, …
             event.codePoint == '\n'.code -> f.enter()
             event.codePoint == ' '.code -> f.space()
