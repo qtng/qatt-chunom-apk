@@ -42,4 +42,7 @@
     <string name="compose_font_current">%1$s is up to date</string>
     <string name="compose_font_failed">Download failed: %1$s</string>
     <string name="compose_font_busy">A download is already running</string>
+    <string name="compose_setup_title">Which scripts do you want to type?</string>
+    <string name="compose_setup_space">What should the Space key do?</string>
+    <string name="compose_setup_ok">OK</string>
 </resources>

@@ -51,6 +51,10 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     private var stripContainer: View? = null
     private var keyboardWrapper: View? = null
     private var keyboardHeight = 0
+    // the first time the field is used it asks which scripts to type and what Space does (in the place of the keyboard)
+    private var setupPending = false
+    private val setupScripts = BooleanArray(3)           // PA, QATT, Chữ Nôm: nothing chosen at first
+    private var setupSpace: SpaceMode? = null
     private var expanded = false      // the rest of the candidates as a grid in the place of the keyboard
 
     var active = false
@@ -113,6 +117,8 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     fun toggle() { if (active) close() else open() }
 
     private fun open() {
+        setupPending = !prefs.getBoolean(PREF_SETUP_DONE, false)
+        if (setupPending) { setupScripts.fill(false); setupSpace = null }
         active = true
         selected = true
         ignoreSelectionUntil = System.currentTimeMillis() + 600
@@ -146,7 +152,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (event.keyCode == KeyCode.DELETE) {
             if (swallowRepeats && !active) { if (event.isKeyRepeat) return true else swallowRepeats = false }
         } else swallowRepeats = false
-        if (!active || !selected) return false
+        if (!active || !selected || setupPending) return false
         expanded = false
         val f = field
         when {
@@ -190,8 +196,25 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         refresh()
     }
 
+    override fun onSetupToggle(index: Int) {
+        setupScripts[index] = !setupScripts[index]
+        val needs = when (setupSpace) { SpaceMode.PA -> 0; SpaceMode.QATT -> 1; SpaceMode.NOM -> 2; else -> -1 }
+        if (needs >= 0 && !setupScripts[needs]) setupSpace = null       // Space cannot convert to a script that is off
+        refresh()
+    }
+
+    override fun onSetupSpace(mode: SpaceMode) { setupSpace = mode; refresh() }
+
+    override fun onSetupConfirm() {
+        if (setupScripts.none { it }) return
+        saveSettings(field.settings.copy(pa = setupScripts[0], qatt = setupScripts[1], nom = setupScripts[2], space = setupSpace ?: SpaceMode.NONE))
+        prefs.edit { putBoolean(PREF_SETUP_DONE, true) }
+        setupPending = false
+        refresh()
+    }
+
     override fun onMoreToggle() {
-        if (!expanded) keyboardWrapper?.height?.takeIf { it > 0 }?.let { keyboardHeight = it }   // the grid is as high as the keyboard
+        if (!expanded && !setupPending) keyboardWrapper?.height?.takeIf { it > 0 }?.let { keyboardHeight = it }   // the grid is as high as the keyboard
         expanded = !expanded
         refresh()
     }
@@ -385,6 +408,12 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         if (!more) expanded = false
         p.setCandidates(all.take(places))
         p.setMore(more, expanded)
+        if (setupPending) {                         // the first-time setup replaces the keyboard
+            keyboardWrapper?.visibility = View.GONE
+            p.showSetup(setupScripts, setupSpace, keyboardHeight)
+            return
+        }
+        p.hideSetup()
         // the rest of the candidates replaces the keyboard
         if (expanded && selected && more) {
             keyboardWrapper?.visibility = View.GONE
@@ -428,6 +457,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
 
     companion object {
         private const val PREF_CHOICES = "qatt_compose_send_choices"
+        private const val PREF_SETUP_DONE = "qatt_compose_setup_done"
         private const val PREF_NOM = "qatt_compose_nom"
         private const val PREF_PA = "qatt_compose_pa"
         private const val PREF_QATT = "qatt_compose_qatt"

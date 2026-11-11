@@ -40,4 +40,7 @@
     <string name="compose_font_current">%1$s đã là bản mới nhất</string>
     <string name="compose_font_failed">Tải về không thành công: %1$s</string>
     <string name="compose_font_busy">Đang có một lượt tải về</string>
+    <string name="compose_setup_title">Bạn muốn gõ những chữ nào?</string>
+    <string name="compose_setup_space">Phím cách làm gì?</string>
+    <string name="compose_setup_ok">OK</string>
 </resources>
