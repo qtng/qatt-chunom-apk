@@ -111,14 +111,14 @@ class ComposePanelView(context: Context, private val fonts: ComposeFonts) : Line
 
     private var sendReady = false
 
-    /** The send button is a round button, grey while the field is empty and coloured (as the one of the Claude app) as soon as there is text. */
+    /** The send button is a round button, grey while the field is empty and coloured (the strong blue of the Ocean style) as soon as there is text. */
     fun setSendReady(ready: Boolean) { if (ready != sendReady) { sendReady = ready; styleSend() } }
 
     private fun styleSend() {
         val theme = colors
         send.background = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
-            setColor(if (sendReady) 0xFFC96442.toInt() else (theme.get(ColorType.KEY_TEXT) and 0x00FFFFFF) or 0x22000000)
+            setColor(if (sendReady) 0xFF1F4E9C.toInt() else (theme.get(ColorType.KEY_TEXT) and 0x00FFFFFF) or 0x22000000)
         }
         send.setColorFilter(if (sendReady) 0xFFFFFFFF.toInt() else (theme.get(ColorType.KEY_TEXT) and 0x00FFFFFF) or 0x66000000)
         send.isEnabled = sendReady
