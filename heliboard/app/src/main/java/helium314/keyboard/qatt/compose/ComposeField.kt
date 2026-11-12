@@ -68,9 +68,14 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
 
     private fun replaceWord(with: String) {
         val start = composingStart
-        sb.replace(start, cursor, with)
-        cursor = start + with.length
+        // a PA syllable right behind a CJK character is its ruby annotation (written small over it by the font); Backspace behind it dissolves it
+        val lead = if (isPaSyllable(with) && start > 0 && isRubyBase(sb.codePointBefore(start))) String(Character.toChars(PaText.RUBY_OVER)) else ""
+        sb.replace(start, cursor, lead + with)
+        cursor = start + lead.length + with.length
     }
+
+    private fun isPaSyllable(s: String) = PaText.SYL.matchEntire(s) != null
+    private fun isRubyBase(cp: Int) = cp in 0x2E80..0xD7FF || cp in 0xF900..0xFAFF || cp in 0x20000..0x3FFFF
 
     /** A key of the keyboard: a letter goes into the word (Telex), anything else is written as it is. */
     /** Telex is on while the keyboard is Vietnamese; in another language the letters go in as they are and Space is a plain space (the candidates stay). */
@@ -117,6 +122,14 @@ class ComposeField(private val parser: VietnameseParser, private val nom: NomDic
     fun backspace() {
         if (cursor == 0) return
         val start = Cells.startBefore(sb, cursor)
+        // behind an annotated character only the ruby control goes first: the syllable stays as normal text
+        val unit = Cells.RUBY_UNIT.find(sb, start)?.takeIf { it.range.first == start && start + it.value.length == cursor }
+        if (unit != null) {
+            val control = start + Character.charCount(sb.codePointAt(start))
+            sb.delete(control, control + 2)
+            cursor -= 2
+            return
+        }
         sb.delete(start, cursor)
         cursor = start
     }

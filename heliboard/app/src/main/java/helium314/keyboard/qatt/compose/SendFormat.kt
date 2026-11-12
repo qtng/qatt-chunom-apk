@@ -34,10 +34,10 @@ enum class ImageStyle(val foreground: Int, val background: Int, val backgroundEn
  * The fonts of the field and of the images: [file] is the big font (QATT, Chữ Nôm and the Latin of Quốc Ngữ in one file), [pa] the PA font (PA is not in the big fonts).
  * Only QATT Pen is in the app ([bundled]); the others are downloaded from cdn.qatt.org on the user's wish ([downloadName] is the file name there, [sizeMb] its size) or imported from a file.
  */
-enum class ComposeFont(val label: String, val file: String, val pa: String, val bundled: Boolean, val sizeMb: Int) {
-    PEN("QATT Pen", "qatt-pen.ttf", "pa-pen.ttf", true, 27),
-    MIGOI("Migoi", "migoi.ttf", "pa-migoi.ttf", false, 42),
-    PHONGTHAO("Phong Thảo", "phongthao.ttf", "pa-phongthao.ttf", false, 41);
+enum class ComposeFont(val label: String, val file: String, val bundled: Boolean, val sizeMb: Int) {
+    PEN("QATT Pen", "qatt-pen.ttf", true, 28),
+    MIGOI("Migoi", "migoi.ttf", false, 42),
+    PHONGTHAO("Phong Thảo", "phongthao.ttf", false, 41);
 
     val downloadName get() = file
 }

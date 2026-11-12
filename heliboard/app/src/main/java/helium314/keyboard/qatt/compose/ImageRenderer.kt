@@ -110,8 +110,11 @@ object ImageRenderer {
         val blockWidth = ceil(widestLine(layoutOf(styled, size, style.foreground, 10_000, Layout.Alignment.ALIGN_NORMAL))).toInt().coerceAtLeast(1)
         val probe = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER)
         val fontLine = (probe.getLineBottom(0) - probe.getLineTop(0)).coerceAtLeast(1)
-        val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER, (size + LINE_GAP) / fontLine)
-        val height0 = layout.height + 2 * FREE_PAD
+        // a ruby annotation is drawn about half an em over (or under) its character: such text gets that room between the lines and above and below
+        val ruby = clean.any { line -> line.contains(String(Character.toChars(PaText.RUBY_OVER))) || line.contains(String(Character.toChars(PaText.RUBY_UNDER))) }
+        val room = if (ruby) size / 2 else 0f
+        val layout = layoutOf(styled, size, style.foreground, blockWidth, Layout.Alignment.ALIGN_CENTER, (size + LINE_GAP + room) / fontLine)
+        val height0 = layout.height + 2 * FREE_PAD + room.toInt()
         val characters = clean.sumOf { line -> Cells.split(line).count { it.isNotBlank() } }
         val width = maxOf(blockWidth + 2 * ceil(size / 2).toInt(), if (characters < SHORT_TEXT) ceil(height0 * SHORT_ASPECT).toInt() else 0)
         val height = maxOf(height0, ceil(width / FREE_ASPECT).toInt())

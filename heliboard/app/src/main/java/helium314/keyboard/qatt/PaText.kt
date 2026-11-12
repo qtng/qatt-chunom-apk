@@ -4,14 +4,17 @@ package helium314.keyboard.qatt
 
 import java.text.Normalizer
 
-/** Port of `PaText` of js/pa-text.js (qtng/qatt): Quốc Ngữ <-> the PA script (code points from U+F00B0). */
+/** Port of `PaText` of js/pa-text.js (qtng/qatt): Quốc Ngữ <-> the PA script (code points from U+F00D0; U+F00B0 / U+F00B1 are the annotation controls, see [RUBY_OVER]). */
 object PaText {
-    const val J = 0xF00B0
-    const val K = 0xF00B1
-    private const val A0 = 0xF00B2
-    private const val N0 = 0xF00C9
-    private const val C0 = 0xF00DF
-    private const val T0 = 0xF00E9
+    const val J = 0xF00D0
+    const val K = 0xF00D1
+    private const val A0 = 0xF00D2
+    private const val N0 = 0xF00E9
+    private const val C0 = 0xF00FF
+    private const val T0 = 0xF0109
+    /** The ruby controls (shared by PA and QATT): a CJK character, the control, one syllable: the syllable is drawn small over (RUBY_OVER) or under (RUBY_UNDER) the character. */
+    const val RUBY_OVER = 0xF00B0
+    const val RUBY_UNDER = 0xF00B1
     private val ONSETS = "Z B C CH DD D PH G GI H KH L M N NG NH R S T TH TR V X".split(" ")
     private val NUCLEI = "A OW AW AA EE E I IEE OO O U UOO UW UWOW OA UOW OAW UAA UEE OE UY UYEE".split(" ")
     private val CODAS = "U I M N NG NH P T C CH".split(" ")
@@ -63,9 +66,9 @@ object PaText {
         return encode(onset, nucleus, coda, TONE[p.tone] ?: 0, opt.stacked, opt.ngang)
     }
 
-    private const val LETTER = "[\\x{F00B2}-\\x{F00C8}]"
+    private const val LETTER = "[\\x{F00D2}-\\x{F00E8}]"
     /** a syllable of PA text: the stem, then a coda (with or without the combiner), a tone alone, or the combiner and a tone alone */
-    val SYL = Regex("($LETTER)\\x{F00B0}([\\x{F00C9}-\\x{F00DE}])(?:\\x{F00B1}?([\\x{F00DF}-\\x{F00E8}])([\\x{F00E9}-\\x{F00EE}])?|\\x{F00B1}?([\\x{F00E9}-\\x{F00EE}]))?")
+    val SYL = Regex("($LETTER)\\x{F00D0}([\\x{F00E9}-\\x{F00FE}])(?:\\x{F00D1}?([\\x{F00FF}-\\x{F0108}])([\\x{F0109}-\\x{F010E}])?|\\x{F00D1}?([\\x{F0109}-\\x{F010E}]))?")
 
     private fun readMatch(m: MatchResult, parser: VietnameseParser): String? {
         val g = m.groups
@@ -105,7 +108,7 @@ object PaText {
         }
     }
 
-    private val BETWEEN = Regex("([\\x{F00B2}-\\x{F00EE}]) (?=[\\x{F00B2}-\\x{F00EE}])")
+    private val BETWEEN = Regex("([\\x{F00D2}-\\x{F010E}]) (?=[\\x{F00D2}-\\x{F010E}])")
 
     private val LATIN_RUN = Regex("[\\p{script=Latin}\\p{M}]+")
 
@@ -116,10 +119,10 @@ object PaText {
     /** the text read and written again (e.g. to stack a PA text typed unstacked) */
     fun restack(text: String, parser: VietnameseParser, opt: Options = Options()) = convert(read(text, parser), parser, opt)
 
-    private const val NUCLEUS = "[\\x{F00C9}-\\x{F00DE}]"
-    private const val CODA_T = "[\\x{F00DF}-\\x{F00E8}][\\x{F00E9}-\\x{F00EE}]?"
-    private const val TONE_T = "[\\x{F00E9}-\\x{F00EE}]"
+    private const val NUCLEUS = "[\\x{F00E9}-\\x{F00FE}]"
+    private const val CODA_T = "[\\x{F00FF}-\\x{F0108}][\\x{F0109}-\\x{F010E}]?"
+    private const val TONE_T = "[\\x{F0109}-\\x{F010E}]"
     /** the cells: a stem alone, with a tone mark, or stacked with a coda (and a tone); a nucleus, a coda with its tone, a tone: each alone */
-    val CELL = Regex("$LETTER(?:\\x{F00B0}$NUCLEUS(?:\\x{F00B1}(?:$CODA_T|$TONE_T)|$TONE_T)?)?|$NUCLEUS|$CODA_T|$TONE_T")
-    val CELL_ANY = Regex(CELL.pattern + "|[\\x{F00B0}\\x{F00B1}]|(?s:.)")
+    val CELL = Regex("$LETTER(?:\\x{F00D0}$NUCLEUS(?:\\x{F00D1}(?:$CODA_T|$TONE_T)|$TONE_T)?)?|$NUCLEUS|$CODA_T|$TONE_T")
+    val CELL_ANY = Regex(CELL.pattern + "|[\\x{F00D0}\\x{F00D1}]|(?s:.)")
 }

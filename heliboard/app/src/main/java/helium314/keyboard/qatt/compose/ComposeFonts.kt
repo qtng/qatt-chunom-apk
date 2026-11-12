@@ -11,11 +11,11 @@ import android.text.style.MetricAffectingSpan
 
 /**
  * The fonts the composition field and the image are drawn with. The big font of the chosen [ComposeFont] (QATT Pen is in the app, the others are imported, see
- * [FontStore]) has QATT, Chữ Nôm and the Latin of Quốc Ngữ; PA is not in it and comes from its own small file (assets/fonts). A character that the fonts do not have
+ * [FontStore]) has QATT, PA (from build 12 of the fonts), Chữ Nôm and the Latin of Quốc Ngữ. A character that the font does not have
  * is drawn with the fonts of the system; a font that cannot be loaded is skipped.
  */
 class ComposeFonts(private val context: Context) {
-    private class Loaded(val main: Typeface?, val pa: Typeface?, val stamp: Long)
+    private class Loaded(val main: Typeface?, val stamp: Long)
 
     private val loaded = HashMap<ComposeFont, Loaded>()
 
@@ -29,8 +29,7 @@ class ComposeFonts(private val context: Context) {
         val main = try {
             if (file != null) Typeface.createFromFile(file) else if (font.bundled) Typeface.createFromAsset(context.assets, "fonts/${font.file}") else null
         } catch (e: Exception) { null }
-        val pa = try { Typeface.createFromAsset(context.assets, "fonts/${font.pa}") } catch (e: Exception) { null }
-        return Loaded(main, pa, stamp).also { loaded[font] = it }
+        return Loaded(main, stamp).also { loaded[font] = it }
     }
 
     /** The font in use if it is installed, else QATT Pen. */
@@ -41,14 +40,11 @@ class ComposeFonts(private val context: Context) {
         override fun updateMeasureState(tp: TextPaint) { tp.typeface = typeface }
     }
 
-    /** [text] in the big font, its PA characters in the PA font. */
+    /** [text] all in the big font, in one piece: QATT, PA, Chữ Nôm and the Latin are in it, and the ruby annotation (a character, U+F00B0 and a syllable) works inside the font. */
     fun styled(text: CharSequence): SpannableStringBuilder {
         val out = SpannableStringBuilder(text)
-        val fonts = current
-        for (run in ScriptRuns.split(text)) {
-            val tf = (if (run.script == Script.PA) fonts.pa else fonts.main) ?: continue
-            out.setSpan(FontSpan(tf), run.start, run.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
+        val tf = current.main
+        if (tf != null && text.isNotEmpty()) out.setSpan(FontSpan(tf), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         return out
     }
 }

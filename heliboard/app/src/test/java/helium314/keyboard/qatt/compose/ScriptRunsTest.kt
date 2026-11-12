@@ -18,8 +18,10 @@ class ScriptRunsTest {
         assertEquals(Script.QATT, ScriptRuns.scriptOf(0xF0000))
         assertEquals(Script.QATT, ScriptRuns.scriptOf(0xF00A3))
         assertEquals(Script.OTHER, ScriptRuns.scriptOf(0xF00A4))
-        assertEquals(Script.PA, ScriptRuns.scriptOf(0xF00B2))
-        assertEquals(Script.PA, ScriptRuns.scriptOf(0xF00EE))
+        assertEquals(Script.PA, ScriptRuns.scriptOf(0xF00D2))
+        assertEquals(Script.PA, ScriptRuns.scriptOf(0xF010E))
+        assertEquals(Script.CJK, ScriptRuns.scriptOf(0xF00B0))        // the ruby controls go with the character they annotate
+        assertEquals(Script.OTHER, ScriptRuns.scriptOf(0xF00CF))
         assertEquals(Script.OTHER, ScriptRuns.scriptOf(0xE000))       // private use of the BMP
     }
 

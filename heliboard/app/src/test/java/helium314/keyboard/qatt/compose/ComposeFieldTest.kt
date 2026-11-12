@@ -41,6 +41,28 @@ class ComposeFieldTest {
         assertTrue(f.allCandidates().isNotEmpty())                     // but the candidates are there, a tap converts
     }
 
+    @Test fun paBehindACjkCharacterIsARubyAnnotation() {
+        val f = field(ComposeSettings(pa = true, qatt = false, nom = false, space = SpaceMode.PA))
+        f.type("漢"); f.type("han"); f.space()
+        val han = PaText.word("han", parser)!!
+        assertEquals("漢" + String(Character.toChars(0xF00B0)) + han, f.text)            // CJK, the ruby control, the syllable: the font draws it small over the character
+        assertEquals(f.text.length, f.cursor)
+        f.backspace()                                                                        // first only the ruby control goes
+        assertEquals("漢$han", f.text)
+        f.backspace()                                                                        // then the syllable as a cell
+        assertEquals("漢", f.text)
+        // not behind a CJK character: a normal PA cell
+        val g = field(ComposeSettings(pa = true, qatt = false, nom = false, space = SpaceMode.PA))
+        g.type("han"); g.space()
+        assertEquals(han, g.text)
+        // a pick of the PA candidate behind a CJK character is an annotation too, and the unit stays whole for the cursor
+        val h = field(ComposeSettings(pa = true, qatt = false, nom = false, space = SpaceMode.NONE))
+        h.type("漢"); h.type("han"); h.pick(0)
+        assertEquals("漢" + String(Character.toChars(0xF00B0)) + han, h.text)
+        h.setCursor(1)
+        assertEquals(0, h.cursor)                                                            // not inside the annotated character
+    }
+
     @Test fun candidatesInTheOrderPaQattNom() {
         val f = field()
         f.type("nguwowif")

@@ -69,7 +69,7 @@ class SendFormatTest {
         assertFalse(GlyphSupport.systemShows("xin chào ${qattLetter}") { it != qattLetter })
         assertTrue(GlyphSupport.systemShows("chỉ có chữ quốc ngữ") { false })        // nothing to ask
         // an empty field: the probes of the scripts that are on
-        assertEquals(listOf(qattLetter, String(Character.toChars(0xF00B2)), nomRare), GlyphSupport.probes(true, true))
+        assertEquals(listOf(qattLetter, String(Character.toChars(0xF00D2)), nomRare), GlyphSupport.probes(true, true))
         assertEquals(listOf(nomRare), GlyphSupport.probes(false, false))
         assertFalse(GlyphSupport.systemShows("", true, true) { it != qattLetter })
         assertTrue(GlyphSupport.systemShows("", false, false) { it == nomRare })

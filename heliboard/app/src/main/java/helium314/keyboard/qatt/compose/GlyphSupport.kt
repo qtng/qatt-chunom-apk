@@ -8,9 +8,9 @@ package helium314.keyboard.qatt.compose
  * This tells what this device shows, not what the recipient's device shows.
  */
 object GlyphSupport {
-    /** One character each of QATT (U+F0007), PA (U+F00B2) and a rare Chữ Nôm character (𡦂, CJK Ext. B), for a field that is still empty. */
+    /** One character each of QATT (U+F0007), PA (U+F00D2) and a rare Chữ Nôm character (𡦂, CJK Ext. B), for a field that is still empty. */
     fun probes(qatt: Boolean, pa: Boolean): List<String> =
-        listOfNotNull(if (qatt) String(Character.toChars(0xF0007)) else null, if (pa) String(Character.toChars(0xF00B2)) else null, String(Character.toChars(0x219C2)))
+        listOfNotNull(if (qatt) String(Character.toChars(0xF0007)) else null, if (pa) String(Character.toChars(0xF00D2)) else null, String(Character.toChars(0x219C2)))
 
     private fun needsCheck(cp: Int) = cp >= 0x2E80
 

@@ -13,8 +13,13 @@ object Cells {
     /** Is the character a glyph of QATT, PA or Chữ Nôm / Han (not a Latin letter)? */
     fun isGlyph(codePoint: Int) = ScriptRuns.scriptOf(codePoint) != Script.OTHER
 
+    private const val RUBY_BASE = "[\\x{2E80}-\\x{D7FF}\\x{F900}-\\x{FAFF}\\x{20000}-\\x{3FFFF}]"
+    /** An annotated character: a CJK character, the ruby control (U+F00B0 over, U+F00B1 under) and one syllable (a PA cell with its coda and tone, or a QATT cell): one unit like a cell. */
+    val RUBY_UNIT = Regex(RUBY_BASE + "[\\x{F00B0}\\x{F00B1}](?:" + PaText.CELL.pattern + "(?:[\\x{F00FF}-\\x{F0108}][\\x{F0109}-\\x{F010E}]?)?|" + QattText.CELL.pattern + ")")
+
     /** The length (in UTF-16 units) of the cell that starts at [i]. */
     private fun cellLength(text: String, i: Int): Int {
+        RUBY_UNIT.find(text, i)?.takeIf { it.range.first == i }?.let { return it.value.length }
         val q = QattText.CELL_ANY.find(text, i)?.takeIf { it.range.first == i }?.value?.length ?: 0
         val p = PaText.CELL_ANY.find(text, i)?.takeIf { it.range.first == i }?.value?.length ?: 0
         return maxOf(q, p, Character.charCount(text.codePointAt(i)))
