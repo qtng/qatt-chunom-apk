@@ -100,7 +100,18 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
     }
 
     /** A new input field (not just a restart of the same one): the field is closed and the app is looked at. */
+    /**
+     * Build 12 of the big fonts has PA (from U+F00D0) and the ruby annotation in it: a font that the user downloaded or imported before (PA was in a file of its own then)
+     * would show no PA now. Once, those files are removed (QATT Pen is in the app, Migoi and Phong Thảo can be downloaded again).
+     */
+    private fun migrateFonts() {
+        if (prefs.getBoolean(PREF_FONT_BUILD12, false)) return
+        for (f in ComposeFont.values()) { FontStore.remove(ime, f); updater.forgetEtag(f) }
+        prefs.edit { putBoolean(PREF_FONT_BUILD12, true) }
+    }
+
     fun onStartInput(editorInfo: EditorInfo?, restarting: Boolean) {
+        migrateFonts()
         if (!restarting) close()
         packageName = editorInfo?.packageName
         lastSelStart = editorInfo?.initialSelStart ?: -1; lastSelEnd = editorInfo?.initialSelEnd ?: -1
@@ -378,10 +389,6 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
             menu.menu.add(2, 30 + i, 30 + i, fontLabel(font)).apply { isCheckable = true; isChecked = fonts.family == font && FontStore.isInstalled(ime, font) }
         }
         menu.menu.setGroupCheckable(2, true, true)
-        val icon = prefs.getString(PREF_ICON, "nom")
-        val icons = listOf("nom" to R.string.compose_icon_nom, "note_alt" to R.string.compose_icon_note_alt, "bubble" to R.string.compose_icon_bubble)
-        icons.forEachIndexed { i, (id, label) -> menu.menu.add(3, 50 + i, 34, label).apply { isCheckable = true; isChecked = icon == id } }
-        menu.menu.setGroupCheckable(3, true, true)
         menu.menu.add(Menu.NONE, 22, 40, ime.getString(R.string.compose_update_font, fonts.family.label, fonts.family.sizeMb, fontState(fonts.family)))
         menu.menu.add(Menu.NONE, 24, 41, R.string.compose_import_font)
         if (FontStore.imported(ime, ComposeFont.PEN) != null) menu.menu.add(Menu.NONE, 23, 35, R.string.compose_font_builtin)
@@ -392,11 +399,6 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
                 3 -> saveScripts(s, s.pa, s.qatt, !s.nom)
                 in 10..12 -> saveSettings(s.copy(space = modes[item.itemId - 10].first))
                 in 30..32 -> chooseFont(ComposeFont.values()[item.itemId - 30])
-                in 50..53 -> {
-                    prefs.edit { putString(PREF_ICON, icons[item.itemId - 50].first) }
-                    helium314.keyboard.keyboard.internal.KeyboardIconsSet.needsReload = true
-                    helium314.keyboard.keyboard.KeyboardSwitcher.getInstance().reloadKeyboard()
-                }
                 22 -> updateFont(fonts.family)
                 24 -> launchImport(fonts.family)
                 23 -> { FontStore.remove(ime, ComposeFont.PEN); updater.forgetEtag(ComposeFont.PEN); fonts.family = ComposeFont.PEN; prefs.edit { putString(PREF_FONT, ComposeFont.PEN.name) } }
@@ -566,7 +568,7 @@ class ComposeController(private val ime: LatinIME) : ComposePanelView.Listener {
         private const val PREF_PINNED_DONE = "qatt_compose_pinned_done"
         private const val PREF_USAGE = "qatt_compose_usage"
         private const val PREF_FONT = "qatt_compose_font"
-        private const val PREF_ICON = "qatt_compose_icon"
+        private const val PREF_FONT_BUILD12 = "qatt_font_build12"
         private const val PREF_LUCKY_LAST = "qatt_compose_lucky_last"
         private const val MAX_USAGE = 1000
     }
