@@ -54,11 +54,11 @@ object ImageRenderer {
     private const val SHORT_ASPECT = 3f
     private const val FREE_ASPECT = 3f
 
-    private const val MARK = "Qatt.org"        // the small transparent mark in the lower right corner of every image
+    private const val MARK = "Q"               // the small transparent mark in the lower right corner of every image
     private const val MARK_ALPHA = 0.10f       // its opacity (of the text colour)
-    private const val MARK_HEIGHT = 0.08f      // its size: this part of the image height ...
-    private const val MARK_MIN = 9f            // ... but at least this ...
-    private const val MARK_MAX = 16f           // ... and at most this many pixels
+    private const val MARK_HEIGHT = 0.16f      // its size: this part of the image height ...
+    private const val MARK_MIN = 14f           // ... but at least this ...
+    private const val MARK_MAX = 30f           // ... and at most this many pixels
     private const val MARK_MARGIN = 0.4f       // the distance to the edges: this part of the mark size
 
     /** The apps that crop an image to a small square: they get the square layout. More are added when they become known. */
@@ -147,7 +147,7 @@ object ImageRenderer {
         return bitmap
     }
 
-    /** A small transparent "Qatt.org" (in the colour of the text) in the lower right corner. */
+    /** A small transparent Q (in the colour of the text) in the lower right corner. */
     private fun drawMark(canvas: Canvas, width: Int, height: Int, color: Int) {
         val size = (height * MARK_HEIGHT).coerceIn(MARK_MIN, MARK_MAX)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
