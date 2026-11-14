@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only. Drafts of translations by an AI: to be checked by a native speaker. -->
+<resources>
+    <string name="compose">Chữ Nôm, QATT, PA</string>
+    <string name="compose_hint">Chữ Nôm · QATT · PA</string>
+    <string name="compose_back">Đóng</string>
+    <string name="compose_send">Gửi</string>
+    <string name="compose_settings">Cài đặt</string>
+    <string name="compose_format_text">Văn bản</string>
+    <string name="compose_format_image">Ảnh</string>
+    <string name="compose_format_image_bw">Ảnh: Trắng</string>
+    <string name="compose_format_image_wb">Ảnh: Tối</string>
+    <string name="compose_nom_candidates">Gõ Chữ Nôm</string>
+    <string name="compose_pa_candidates">Gõ PA</string>
+    <string name="compose_qatt_candidates">Gõ QATT</string>
+    <string name="compose_space_none">Dấu cách: mặc định</string>
+    <string name="compose_space_pa">Phím cách: chuyển sang PA</string>
+    <string name="compose_space_qatt">Phím cách: chuyển sang QATT</string>
+    <string name="compose_space_nom">Phím cách: chuyển sang Chữ Nôm</string>
+    <string name="compose_forget_choices">Đặt lại Văn bản/Ảnh cho từng ứng dụng</string>
+    <string name="compose_style_lacquer_gradient">Ảnh: Sơn mài</string>
+    <string name="compose_style_moss_gradient">Ảnh: Vườn rêu</string>
+    <string name="compose_style_pink_gradient">Ảnh: Sen</string>
+    <string name="compose_style_sunset_gradient">Ảnh: Hoàng hôn</string>
+    <string name="compose_style_ocean_gradient">Ảnh: Đại dương</string>
+    <string name="compose_more">Thêm gợi ý</string>
+    <string name="compose_less">Ít gợi ý hơn</string>
+    <string name="compose_font">Phông chữ: %1$s</string>
+    <string name="compose_font_installed">Đã cài phông chữ</string>
+    <string name="compose_font_invalid">Tệp này không phải là phông chữ dùng được</string>
+    <string name="compose_style_ink_on_rice_paper">Ảnh: Cổ điển</string>
+    <string name="compose_font_builtin">Dùng QATT Pen có sẵn trong ứng dụng</string>
+    <string name="compose_font_state_builtin">có sẵn</string>
+    <string name="compose_font_state_none">chưa cài</string>
+    <string name="compose_font_state_imported">đã nhập %1$s</string>
+    <string name="compose_update_font">Cập nhật phông chữ: %1$s (tải về, %2$d MB; %3$s)</string>
+    <string name="compose_font_download">(tải về, %1$d MB)</string>
+    <string name="compose_import_font">Nhập tệp phông chữ…</string>
+    <string name="compose_font_downloading">%1$s: %2$s</string>
+    <string name="compose_font_current">%1$s đã là bản mới nhất</string>
+    <string name="compose_font_failed">Tải về không thành công: %1$s</string>
+    <string name="compose_font_busy">Đang có một lượt tải về</string>
+    <string name="compose_setup_title">Bạn muốn gõ những chữ nào?</string>
+    <string name="compose_setup_ok">OK</string>
+    <string name="compose_style_lucky">Ảnh: Bốc thăm</string>
+</resources>

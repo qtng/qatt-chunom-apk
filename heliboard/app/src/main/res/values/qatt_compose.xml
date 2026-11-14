@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<resources>
+    <string name="qatt_compose_provider_authority" translatable="false">org.qatt.keyboard.composeprovider</string>
+
+    <string name="compose">Chữ Nôm, QATT, PA</string>
+    <string name="compose_hint">Chữ Nôm · QATT · PA</string>
+    <string name="compose_back">Close</string>
+    <string name="compose_send">Send</string>
+    <string name="compose_settings">Settings</string>
+    <string name="compose_format_text">Text</string>
+    <string name="compose_format_image">Image</string>
+    <string name="compose_format_image_bw">Image: White</string>
+    <string name="compose_format_image_wb">Image: Dark</string>
+    <string name="compose_nom_candidates">Input Chữ Nôm</string>
+    <string name="compose_pa_candidates">Input PA</string>
+    <string name="compose_qatt_candidates">Input QATT</string>
+    <string name="compose_space_none">Space: default</string>
+    <string name="compose_space_pa">Space: converts to PA</string>
+    <string name="compose_space_qatt">Space: converts to QATT</string>
+    <string name="compose_space_nom">Space: converts to Chữ Nôm</string>
+    <string name="compose_forget_choices">Reset Text/Image per app</string>
+    <string name="compose_style_lacquer_gradient">Image: Lacquer</string>
+    <string name="compose_style_moss_gradient">Image: Moss garden</string>
+    <string name="compose_style_pink_gradient">Image: Lotus</string>
+    <string name="compose_style_sunset_gradient">Image: Sunset</string>
+    <string name="compose_style_ocean_gradient">Image: Ocean</string>
+    <string name="compose_more">More candidates</string>
+    <string name="compose_less">Fewer candidates</string>
+    <string name="compose_font">Font: %1$s</string>
+    <string name="compose_font_installed">Font installed</string>
+    <string name="compose_font_invalid">This file is not a usable font</string>
+    <string name="compose_style_ink_on_rice_paper">Image: Classic</string>
+    <string name="compose_font_builtin">Use the built-in QATT Pen</string>
+    <string name="compose_font_state_builtin">built in</string>
+    <string name="compose_font_state_none">not installed</string>
+    <string name="compose_font_state_imported">imported %1$s</string>
+    <string name="compose_update_font">Update the font: %1$s (download, %2$d MB; %3$s)</string>
+    <string name="compose_font_download">(download, %1$d MB)</string>
+    <string name="compose_import_font">Import a font file…</string>
+    <string name="compose_font_downloading">%1$s: %2$s</string>
+    <string name="compose_font_current">%1$s is up to date</string>
+    <string name="compose_font_failed">Download failed: %1$s</string>
+    <string name="compose_font_busy">A download is already running</string>
+    <string name="compose_setup_title">Which scripts do you want to type?</string>
+    <string name="compose_setup_ok">OK</string>
+    <string name="compose_style_lucky">Image: Lucky draw</string>
+</resources>
