@@ -23,6 +23,16 @@ Each folder builds on its own (`ANDROID_HOME` set): `cd heliboard && ./gradlew a
 
 The Vietnamese word list of the suggestion strip (`heliboard/app/src/main/assets/vi/words.txt`) combines the Vietnamese word list of the HeliBoard dictionary repository (CC BY 4.0), the entries of `dict.csv` and `js/ime.js` of chunom.org, and the Vietnamese words of the English Wiktionary as extracted by [kaikki.org](https://kaikki.org/dictionary/Vietnamese/) (CC BY-SA 4.0 and GFDL; `heliboard/tools/nom/add_wiktionary.py`). Wiktionary contributors are credited as a group.
 
+## Publishing the APK (cdn.qatt.org)
+
+The debug APK of `heliboard/` is published in the Cloudflare R2 bucket `qatt-fonts` (the bucket of cdn.qatt.org) under `qattkey/`, two files with the same content:
+
+- `https://cdn.qatt.org/qattkey/QATTKey_<version>-debug.apk`: the build with its version in the name (the file name of the build, e.g. `QATTKey_4.3-beta1-debug.apk`);
+- `https://cdn.qatt.org/qattkey/QATTKey-latest.apk`: the same file under a fixed name, the link to give out.
+
+Build: `cd heliboard && ANDROID_HOME=/opt/android-sdk ./gradlew --offline assembleDebug` (the SDK is not found without `ANDROID_HOME`; `local.properties` lies one folder up). The file is `app/build/outputs/apk/debug/QATTKey_<version>-debug.apk`.
+Upload both names with `PUT https://api.cloudflare.com/client/v4/accounts/55ed0314a1cf4cf2fcc2ccb2b4ac417d/r2/buckets/qatt-fonts/objects/qattkey/<name>` (`Content-Type: application/vnd.android.package-archive`, `Content-Disposition: attachment; filename="<name>"`, `Cache-Control: public, max-age=300`, `--data-binary @<file>`); the token is added by the network proxy of the session (as for `features/fonts/tools/r2_publish.py` in `qtng/chunom-private`). A new build replaces both files, a cache may show the old one for 5 minutes.
+
 ## Licences
 
 `heliboard/` keeps the licences of HeliBoard (see its `LICENSE*`), `floris/` those of FlorisBoard (Apache-2.0, its `LICENSE`). The fonts have their own licence.
