@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.graphics.Shader
 import android.net.Uri
 import android.text.Layout
@@ -52,6 +53,13 @@ object ImageRenderer {
     private const val SHORT_TEXT = 10           // a text of fewer characters is at least SHORT_ASPECT : 1
     private const val SHORT_ASPECT = 3f
     private const val FREE_ASPECT = 3f
+
+    private const val MARK = "Q"               // the small transparent mark in the lower right corner of every image
+    private const val MARK_ALPHA = 0.30f       // its opacity (of the text colour)
+    private const val MARK_HEIGHT = 0.16f      // its size: this part of the image height ...
+    private const val MARK_MIN = 14f           // ... but at least this ...
+    private const val MARK_MAX = 30f           // ... and at most this many pixels
+    private const val MARK_MARGIN = 0.4f       // the distance to the edges: this part of the mark size
 
     /** The apps that crop an image to a small square: they get the square layout. More are added when they become known. */
     val SQUARE_APPS = setOf("com.anthropic.claude")
@@ -131,9 +139,26 @@ object ImageRenderer {
         else canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
             shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), style.background, end, Shader.TileMode.CLAMP)   // top left to bottom right
         })
+        canvas.save()
         canvas.translate((width - blockWidth) / 2f, (height - layout.height) / 2f)
         layout.draw(canvas)
+        canvas.restore()
+        drawMark(canvas, width, height, style.foreground)
         return bitmap
+    }
+
+    /** A small transparent Q (in the colour of the text) in the lower right corner. */
+    private fun drawMark(canvas: Canvas, width: Int, height: Int, color: Int) {
+        val size = (height * MARK_HEIGHT).coerceIn(MARK_MIN, MARK_MAX)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color
+            alpha = (255 * MARK_ALPHA).toInt()
+            textSize = size
+            typeface = Typeface.DEFAULT_BOLD
+            textAlign = Paint.Align.RIGHT
+        }
+        val margin = size * MARK_MARGIN
+        canvas.drawText(MARK, width - margin, height - margin - paint.descent(), paint)
     }
 
     /** Writes the image into the cache and returns its address (the provider of the manifest); images older than an hour are deleted. */
