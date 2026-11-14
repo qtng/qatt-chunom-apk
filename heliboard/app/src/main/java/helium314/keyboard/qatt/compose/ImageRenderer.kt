@@ -55,7 +55,7 @@ object ImageRenderer {
     private const val FREE_ASPECT = 3f
 
     private const val MARK = "Q"               // the small transparent mark in the lower right corner of every image
-    private const val MARK_ALPHA = 0.10f       // its opacity (of the text colour)
+    private const val MARK_ALPHA = 0.30f       // its opacity (of the text colour)
     private const val MARK_HEIGHT = 0.16f      // its size: this part of the image height ...
     private const val MARK_MIN = 14f           // ... but at least this ...
     private const val MARK_MAX = 30f           // ... and at most this many pixels
