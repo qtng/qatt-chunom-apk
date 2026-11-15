@@ -163,8 +163,8 @@ class SendFormatTest {
     @Test fun fonts() {
         assertEquals(listOf("QATT Pen", "Migoi", "Phong Thảo"), ComposeFont.values().map { it.label })
         assertEquals(listOf(true, false, false), ComposeFont.values().map { it.bundled })     // only QATT Pen is in the app
-        assertTrue(ComposeFont.values().all { it.file.endsWith(".ttf") && it.pa.endsWith(".ttf") })
-        assertEquals(6, ComposeFont.values().flatMap { listOf(it.file, it.pa) }.toSet().size)  // no file twice
+        assertTrue(ComposeFont.values().all { it.file.endsWith(".ttf") })
+        assertEquals(3, ComposeFont.values().map { it.file }.toSet().size)  // no file twice (PA is in the big font since build 12)
         assertEquals("migoi.ttf", ComposeFont.MIGOI.downloadName)
     }
 

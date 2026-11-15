@@ -23,6 +23,15 @@ Each folder builds on its own (`ANDROID_HOME` set): `cd heliboard && ./gradlew a
 
 The Vietnamese word list of the suggestion strip (`heliboard/app/src/main/assets/vi/words.txt`) combines the Vietnamese word list of the HeliBoard dictionary repository (CC BY 4.0), the entries of `dict.csv` and `js/ime.js` of chunom.org, and the Vietnamese words of the English Wiktionary as extracted by [kaikki.org](https://kaikki.org/dictionary/Vietnamese/) (CC BY-SA 4.0 and GFDL; `heliboard/tools/nom/add_wiktionary.py`). Wiktionary contributors are credited as a group.
 
+## Updating the style guide (parser.js)
+
+The rhyme tables are compiled into the app (`heliboard/app/src/main/java/helium314/keyboard/qatt/Decodings.kt`); a change of `DECODINGS` in `js/parser.js` of `qtng/qatt` reaches the keyboard only with a new APK:
+
+1. `cd heliboard && QATT_PUBLIC=<checkout of qtng/qatt> node tools/golden/gen_tables.mjs > app/src/main/java/helium314/keyboard/qatt/Decodings.kt`
+2. `QATT_PUBLIC=<qatt> CHUNOM_PUBLIC=<chunom> node tools/golden/make_golden.mjs` (the golden files of the tests)
+3. `./gradlew :app:testDebugUnitTest --tests 'helium314.keyboard.qatt.*'` (not offline: Robolectric needs a download); `StyleGuideTest` has the values of single words written out, bring them up to date with `QattText.word` of the JavaScript.
+4. Build and publish as below.
+
 ## Publishing the APK (cdn.qatt.org)
 
 The debug APK of `heliboard/` is published in the Cloudflare R2 bucket `qatt-fonts` (the bucket of cdn.qatt.org) under `qattkey/`, two files with the same content:
