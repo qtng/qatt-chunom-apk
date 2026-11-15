@@ -50,4 +50,30 @@ class NomDictionaryTest {
         assertEquals("𡦂喃", d.lookup("chữ nôm").first().glyph)
         assertTrue(d.lookup("   ").isEmpty())
     }
+
+    /** The search by the letters without marks (js/ime.js does the same; the golden file covers only readings as written). */
+    @Test fun lettersWithoutMarks() {
+        val d = NomDictionary().load("""
+            nước	渃!
+            nuộc	縟
+            nam	南!
+            năm	𢆥
+            nắm	揇
+            nấm	菍
+            hoà	和!
+            đường	塘!
+            dương	洋!
+            chữNôm	𡦂喃!
+        """.trimIndent().reader())
+        fun glyphs(w: String) = d.lookup(w).map { it.glyph }
+        assertEquals(listOf("渃", "縟"), glyphs("nuoc"))                      // nước (defined) before nuộc
+        assertEquals(listOf("渃"), glyphs("nươc"))                            // a typed mark must be there
+        assertEquals(listOf("南", "𢆥", "揇", "菍"), glyphs("nam"))             // written as typed first, then ă before â
+        assertEquals(listOf("揇"), glyphs("nắm"))                             // a typed tone and mark must be there
+        assertEquals(listOf("洋", "塘"), glyphs("duong"))                      // d finds đ too; both defined: d before đ (the alphabet)
+        assertEquals(listOf("塘"), glyphs("đuong"))                           // a typed đ only finds đ
+        assertEquals(glyphs("hoà"), glyphs("hòa"))                            // the tone counts for the syllable, wherever it is written
+        assertEquals(listOf("𡦂喃"), glyphs("chunom"))
+        assertEquals(listOf("𡦂喃"), glyphs("chữ n"))
+    }
 }
